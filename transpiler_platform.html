@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C→Py Transpiler Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0a0c10;--surface:#111318;--card:#161a22;--border:#252b38;
+    --accent:#00e5a0;--accent2:#7c6fff;--amber:#f59e0b;--red:#ef4444;
+    --text:#f0f4ff;--muted:#8892a4;--dim:#3a4255;
+    --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;--font-mono:'JetBrains Mono',monospace;
+  }
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body)}
+  /* ── GRID NOISE BACKGROUND ── */
+  body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(ellipse 80% 60% at 20% 10%,rgba(0,229,160,0.06),transparent),radial-gradient(ellipse 60% 80% at 80% 80%,rgba(124,111,255,0.08),transparent);pointer-events:none;z-index:0}
+
+  /* ── SCREENS ── */
+  .screen{display:none;position:fixed;inset:0;z-index:10;overflow-y:auto}
+  .screen.active{display:flex}
+
+  /* ════ LANDING ════ */
+  #screen-landing{flex-direction:column;align-items:center;justify-content:center;gap:0;padding:2rem}
+  .landing-badge{font-family:var(--font-mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);border:1px solid rgba(0,229,160,0.3);padding:6px 16px;border-radius:40px;margin-bottom:2rem;animation:fadeUp .6s ease both}
+  .landing-title{font-family:var(--font-head);font-size:clamp(2.8rem,7vw,5.5rem);font-weight:800;line-height:1;text-align:center;animation:fadeUp .7s .1s ease both}
+  .landing-title span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .landing-sub{margin-top:1.2rem;font-size:1.1rem;color:var(--muted);text-align:center;max-width:500px;line-height:1.7;animation:fadeUp .7s .2s ease both}
+  .landing-btns{display:flex;gap:12px;margin-top:2.5rem;animation:fadeUp .7s .3s ease both}
+  .btn-primary{background:var(--accent);color:#021a10;font-family:var(--font-body);font-weight:600;font-size:15px;padding:13px 30px;border:none;border-radius:10px;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,229,160,0.35)}
+  .btn-ghost{background:transparent;color:var(--text);font-family:var(--font-body);font-weight:500;font-size:15px;padding:13px 30px;border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .2s}
+  .btn-ghost:hover{border-color:var(--muted);background:rgba(255,255,255,0.04)}
+  .landing-features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:3.5rem;width:100%;max-width:720px;animation:fadeUp .7s .4s ease both}
+  .feat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.4rem 1.2rem;text-align:center}
+  .feat-icon{font-size:26px;margin-bottom:10px}
+  .feat-title{font-family:var(--font-head);font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+  .feat-desc{font-size:12px;color:var(--muted);line-height:1.5}
+
+  /* ════ AUTH SCREEN ════ */
+  #screen-auth{flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+  .auth-box{background:var(--card);border:1px solid var(--border);border-radius:20px;width:100%;max-width:420px;padding:2.5rem 2rem;animation:fadeUp .5s ease both}
+  .auth-logo{font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--accent);margin-bottom:2rem;text-align:center;letter-spacing:1px}
+  .auth-tabs{display:flex;gap:0;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:1.8rem}
+  .auth-tab{flex:1;padding:9px;text-align:center;font-size:13px;font-weight:500;cursor:pointer;border-radius:7px;transition:all .2s;color:var(--muted)}
+  .auth-tab.active{background:var(--surface);color:var(--text)}
+  .form-group{margin-bottom:1rem}
+  .form-label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
+  .form-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:11px 14px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;transition:border-color .2s}
+  .form-input:focus{border-color:var(--accent)}
+  .form-input::placeholder{color:var(--dim)}
+  .auth-submit{width:100%;background:var(--accent);color:#021a10;font-weight:600;font-size:15px;padding:12px;border:none;border-radius:10px;cursor:pointer;margin-top:.5rem;transition:all .2s}
+  .auth-submit:hover{opacity:.9;transform:translateY(-1px)}
+  .auth-back{text-align:center;margin-top:1.2rem;font-size:13px;color:var(--muted);cursor:pointer}
+  .auth-back span{color:var(--accent)}
+
+  /* ════ MAIN APP ════ */
+  #screen-app{flex-direction:column;overflow:hidden}
+  .navbar{height:56px;background:rgba(17,19,24,0.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.5rem;gap:1rem;flex-shrink:0;z-index:100}
+  .nav-logo{font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-right:auto}
+  .nav-tabs{display:flex;gap:2px}
+  .nav-tab{padding:7px 16px;font-size:13px;font-weight:500;color:var(--muted);border-radius:8px;cursor:pointer;transition:all .15s}
+  .nav-tab:hover{color:var(--text);background:rgba(255,255,255,0.05)}
+  .nav-tab.active{color:var(--text);background:rgba(255,255,255,0.08)}
+  .nav-user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+  .nav-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff}
+  .nav-points{font-family:var(--font-mono);font-size:12px;color:var(--accent);background:rgba(0,229,160,0.1);padding:3px 10px;border-radius:20px}
+
+  .app-content{flex:1;overflow-y:auto;display:none;padding:2rem;max-width:1100px;margin:0 auto;width:100%}
+  .app-content.visible{display:block}
+
+  /* ════ CHALLENGES PAGE ════ */
+  .page-title{font-family:var(--font-head);font-size:26px;font-weight:700;margin-bottom:.4rem}
+  .page-sub{color:var(--muted);font-size:14px;margin-bottom:2rem}
+  .challenges-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+  .challenge-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.4rem;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+  .challenge-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,229,160,0.03),transparent);opacity:0;transition:opacity .3s}
+  .challenge-card:hover{border-color:rgba(0,229,160,0.3);transform:translateY(-2px)}
+  .challenge-card:hover::before{opacity:1}
+  .challenge-card.solved{border-color:rgba(0,229,160,0.2);background:linear-gradient(135deg,rgba(0,229,160,0.05),var(--card))}
+  .ch-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.8rem}
+  .ch-num{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:2px;text-transform:uppercase}
+  .ch-badge{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:600;letter-spacing:.5px}
+  .badge-easy{background:rgba(0,229,160,0.15);color:var(--accent)}
+  .badge-medium{background:rgba(245,158,11,0.15);color:var(--amber)}
+  .badge-hard{background:rgba(239,68,68,0.15);color:var(--red)}
+  .ch-title{font-family:var(--font-head);font-size:16px;font-weight:600;margin-bottom:.4rem}
+  .ch-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:1rem}
+  .ch-footer{display:flex;align-items:center;justify-content:space-between}
+  .ch-pts{font-family:var(--font-mono);font-size:12px;color:var(--accent)}
+  .ch-solved-badge{font-size:11px;color:var(--accent);background:rgba(0,229,160,0.1);padding:3px 10px;border-radius:20px}
+
+  /* ════ EDITOR PAGE ════ */
+  .editor-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;height:calc(100vh - 56px - 4rem)}
+  .editor-panel{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+  .panel-header{padding:.8rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+  .panel-title{font-family:var(--font-mono);font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+  .panel-lang{font-family:var(--font-mono);font-size:11px;color:var(--accent);background:rgba(0,229,160,0.1);padding:2px 8px;border-radius:6px}
+  .editor-area{flex:1;position:relative;overflow:hidden}
+  textarea.code-editor{position:absolute;inset:0;background:transparent;border:none;outline:none;color:var(--text);font-family:var(--font-mono);font-size:13px;line-height:1.7;padding:1rem;resize:none;z-index:2;caret-color:var(--accent)}
+  .line-nums{position:absolute;left:0;top:0;padding:1rem 0 1rem .5rem;font-family:var(--font-mono);font-size:13px;line-height:1.7;color:var(--dim);pointer-events:none;z-index:1;width:2rem;text-align:right}
+  .output-area{flex:1;overflow-y:auto;padding:1rem;font-family:var(--font-mono);font-size:13px;line-height:1.7;color:var(--text)}
+  .output-area.error{color:var(--red)}
+  .output-area.success{color:var(--accent)}
+  .editor-sidebar{display:flex;flex-direction:column;gap:12px}
+  .problem-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.4rem;flex-shrink:0}
+  .prob-title{font-family:var(--font-head);font-size:18px;font-weight:700;margin-bottom:.4rem}
+  .prob-meta{display:flex;align-items:center;gap:8px;margin-bottom:1rem}
+  .prob-desc{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:1rem}
+  .prob-example{background:var(--bg);border-radius:10px;padding:.8rem 1rem;font-family:var(--font-mono);font-size:12px;color:var(--text)}
+  .prob-example-label{font-size:11px;color:var(--muted);margin-bottom:.3rem;letter-spacing:1px;text-transform:uppercase}
+  .btn-run{background:var(--accent);color:#021a10;font-family:var(--font-body);font-weight:600;font-size:14px;padding:11px 20px;border:none;border-radius:10px;cursor:pointer;transition:all .2s;width:100%}
+  .btn-run:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,229,160,0.3)}
+  .btn-run:active{transform:translateY(0)}
+  .btn-back-ch{background:transparent;color:var(--muted);font-family:var(--font-body);font-weight:500;font-size:13px;padding:8px 0;border:none;cursor:pointer;transition:color .2s}
+  .btn-back-ch:hover{color:var(--text)}
+
+  /* ════ AWARDS PAGE ════ */
+  .awards-layout{display:grid;grid-template-columns:1fr 320px;gap:20px}
+  .star-display{text-align:center;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.5rem;margin-bottom:20px}
+  .star-count{font-family:var(--font-head);font-size:72px;font-weight:800;background:linear-gradient(135deg,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+  .star-label{font-size:14px;color:var(--muted);margin-top:.3rem}
+  .badges-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .badge-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem;text-align:center;transition:all .25s}
+  .badge-card.earned{border-color:rgba(245,158,11,0.4);background:linear-gradient(135deg,rgba(245,158,11,0.08),var(--card))}
+  .badge-card.locked{opacity:.45}
+  .badge-icon{font-size:30px;margin-bottom:.5rem;filter:grayscale(0)}
+  .badge-card.locked .badge-icon{filter:grayscale(1)}
+  .badge-name{font-family:var(--font-head);font-size:13px;font-weight:600;margin-bottom:.2rem}
+  .badge-req{font-size:11px;color:var(--muted)}
+  .leaderboard-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:1.5rem}
+  .lb-title{font-family:var(--font-head);font-size:18px;font-weight:700;margin-bottom:1.2rem}
+  .lb-row{display:flex;align-items:center;gap:10px;padding:.7rem .5rem;border-radius:10px;transition:background .2s}
+  .lb-row:hover{background:rgba(255,255,255,0.03)}
+  .lb-row.me{background:rgba(0,229,160,0.07);border:1px solid rgba(0,229,160,0.15);border-radius:10px}
+  .lb-rank{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--muted);width:24px;text-align:center;flex-shrink:0}
+  .lb-rank.gold{color:#fbbf24}
+  .lb-rank.silver{color:#94a3b8}
+  .lb-rank.bronze{color:#b45309}
+  .lb-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+  .lb-name{flex:1;font-size:14px;font-weight:500}
+  .lb-pts{font-family:var(--font-mono);font-size:13px;color:var(--accent)}
+
+  /* ════ RESULT MODAL ════ */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center}
+  .modal-overlay.show{display:flex}
+  .modal{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:2.5rem;width:90%;max-width:420px;text-align:center;animation:popIn .3s cubic-bezier(.175,.885,.32,1.275)}
+  .modal-icon{font-size:56px;margin-bottom:.8rem}
+  .modal-title{font-family:var(--font-head);font-size:24px;font-weight:700;margin-bottom:.5rem}
+  .modal-sub{font-size:14px;color:var(--muted);margin-bottom:.8rem}
+  .modal-pts{font-family:var(--font-mono);font-size:36px;font-weight:600;color:var(--accent);margin:1rem 0}
+  .stars-row{display:flex;justify-content:center;gap:6px;font-size:28px;margin-bottom:1.5rem}
+  .modal-btns{display:flex;gap:10px;justify-content:center}
+  .modal-btn{padding:11px 24px;border-radius:10px;font-family:var(--font-body);font-weight:600;font-size:14px;cursor:pointer;transition:all .2s;border:none}
+  .modal-btn.primary{background:var(--accent);color:#021a10}
+  .modal-btn.secondary{background:transparent;color:var(--muted);border:1px solid var(--border)}
+  .modal-btn:hover{transform:translateY(-1px)}
+
+  /* ════ TOAST ════ */
+  .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:13px;z-index:500;transition:transform .3s;white-space:nowrap;color:var(--text)}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast.success{border-color:rgba(0,229,160,0.3);color:var(--accent)}
+
+  /* ════ ANIMATIONS ════ */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes popIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spin{animation:spin 1s linear infinite}
+
+  /* ════ SCROLLBAR ════ */
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--dim);border-radius:4px}
+</style>
+</head>
+<body>
+
+<!-- ── LANDING ── -->
+<div id="screen-landing" class="screen active">
+  <div class="landing-badge">C → Python Transpiler</div>
+  <h1 class="landing-title">Write C.<br><span>Learn Python.</span></h1>
+  <p class="landing-sub">An interactive platform that transpiles C code to Python — learn, solve challenges, and earn rewards.</p>
+  <div class="landing-btns">
+    <button class="btn-primary" onclick="showAuth()">Get Started →</button>
+    <button class="btn-ghost" onclick="guestLogin()">Try as Guest</button>
+  </div>
+  <div class="landing-features">
+    <div class="feat-card">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">Live Transpiler</div>
+      <div class="feat-desc">Real C → Python conversion using your transpiler engine</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🧩</div>
+      <div class="feat-title">Challenges</div>
+      <div class="feat-desc">Solve progressively harder coding problems</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🏆</div>
+      <div class="feat-title">Awards & Stars</div>
+      <div class="feat-desc">Earn stars and badges as you progress</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── AUTH ── -->
+<div id="screen-auth" class="screen">
+  <div class="auth-box">
+    <div class="auth-logo">⚡ C→PY TRANSPILER</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchTab('login')">Sign In</div>
+      <div class="auth-tab" onclick="switchTab('signup')">Sign Up</div>
+    </div>
+    <div id="tab-login">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" type="text" id="login-user" placeholder="Enter username" value="demo">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="login-pass" placeholder="Enter password" value="password">
+      </div>
+      <button class="auth-submit" onclick="doLogin()">Sign In →</button>
+    </div>
+    <div id="tab-signup" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" type="text" id="su-name" placeholder="Your name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" type="text" id="su-user" placeholder="Choose a username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="su-pass" placeholder="Create a password">
+      </div>
+      <button class="auth-submit" onclick="doSignup()">Create Account →</button>
+    </div>
+    <div class="auth-back" onclick="showLanding()">← Back to <span>home</span></div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div id="screen-app" class="screen">
+  <nav class="navbar">
+    <div class="nav-logo">C→PY</div>
+    <div class="nav-tabs">
+      <div class="nav-tab active" onclick="showPage('challenges')">Challenges</div>
+      <div class="nav-tab" onclick="showPage('awards')">Awards</div>
+      <div class="nav-tab" onclick="showPage('playground')">Playground</div>
+    </div>
+    <div class="nav-user">
+      <div class="nav-points" id="nav-points">⭐ 0 pts</div>
+      <div class="nav-avatar" id="nav-avatar">U</div>
+      <span id="nav-username" style="font-size:13px">User</span>
+      <button onclick="logout()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;margin-left:4px">logout</button>
+    </div>
+  </nav>
+
+  <!-- CHALLENGES PAGE -->
+  <div id="page-challenges" class="app-content visible">
+    <div class="page-title">Coding Challenges</div>
+    <p class="page-sub">Write C code — our transpiler converts it to Python. Solve problems to earn stars and points!</p>
+    <div class="challenges-grid" id="challenges-list"></div>
+  </div>
+
+  <!-- EDITOR PAGE -->
+  <div id="page-editor" class="app-content">
+    <button class="btn-back-ch" onclick="showPage('challenges')">← Back to Challenges</button>
+    <div class="editor-layout" style="margin-top:1rem">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="problem-box" id="prob-info"></div>
+        <button class="btn-run" onclick="runCode()">▶ Transpile & Run</button>
+        <div class="editor-panel" style="flex:1;min-height:180px">
+          <div class="panel-header">
+            <span class="panel-title">Transpiled Python</span>
+            <span class="panel-lang">Python 3</span>
+          </div>
+          <div class="output-area" id="output-panel">Press "Transpile & Run" to see output...</div>
+        </div>
+      </div>
+      <div class="editor-panel">
+        <div class="panel-header">
+          <span class="panel-title">C Code Editor</span>
+          <span class="panel-lang">C Language</span>
+        </div>
+        <div class="editor-area">
+          <div class="line-nums" id="line-nums">1</div>
+          <textarea class="code-editor" id="code-editor" spellcheck="false" style="padding-left:3rem" oninput="updateLines()" onkeydown="handleTab(event)">int a = 5;</textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAYGROUND PAGE -->
+  <div id="page-playground" class="app-content">
+    <div class="page-title">Free Playground</div>
+    <p class="page-sub">Experiment freely — write any C code and see the Python equivalent.</p>
+    <div class="editor-layout">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <button class="btn-run" onclick="runPlayground()">▶ Transpile & Run</button>
+        <div class="editor-panel" style="flex:1">
+          <div class="panel-header">
+            <span class="panel-title">Python Output</span>
+            <span class="panel-lang">Python 3</span>
+          </div>
+          <div class="output-area" id="pg-output">Enter C code and hit run...</div>
+        </div>
+      </div>
+      <div class="editor-panel">
+        <div class="panel-header">
+          <span class="panel-title">C Code</span>
+          <span class="panel-lang">C Language</span>
+        </div>
+        <div class="editor-area">
+          <div class="line-nums" id="pg-line-nums">1</div>
+          <textarea class="code-editor" id="pg-editor" spellcheck="false" style="padding-left:3rem" oninput="updatePGLines()" onkeydown="handleTab(event)">int a = 10;
+int b = 5;
+if (a > b) {
+    printf(a);
+}</textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AWARDS PAGE -->
+  <div id="page-awards" class="app-content">
+    <div class="page-title">Awards & Achievements</div>
+    <p class="page-sub">Your progress, stars, and earned badges.</p>
+    <div class="awards-layout">
+      <div>
+        <div class="star-display">
+          <div class="star-count" id="award-pts">0</div>
+          <div class="star-label">Total Points Earned</div>
+          <div style="display:flex;justify-content:center;gap:4px;margin-top:.8rem;font-size:22px" id="award-stars"></div>
+        </div>
+        <div style="font-family:var(--font-head);font-size:16px;font-weight:600;margin-bottom:1rem">Badges</div>
+        <div class="badges-grid" id="badges-grid"></div>
+      </div>
+      <div>
+        <div class="leaderboard-box">
+          <div class="lb-title">🏆 Leaderboard</div>
+          <div id="leaderboard"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── RESULT MODAL ── -->
+<div class="modal-overlay" id="result-modal">
+  <div class="modal">
+    <div class="modal-icon" id="modal-icon">🎉</div>
+    <div class="modal-title" id="modal-title">Challenge Solved!</div>
+    <div class="modal-sub" id="modal-sub">Great work! Here's your reward:</div>
+    <div class="modal-pts" id="modal-pts">+50 pts</div>
+    <div class="stars-row" id="modal-stars"></div>
+    <div class="modal-btns">
+      <button class="modal-btn secondary" onclick="closeModal()">Close</button>
+      <button class="modal-btn primary" onclick="nextChallenge()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let state = {
+  user: null,
+  points: 0,
+  stars: 0,
+  solved: new Set(),
+  currentChallenge: null
+};
+
+const CHALLENGES = [
+  {
+    id:1, title:'Sum of Two Numbers', difficulty:'easy', points:50, stars:1,
+    desc:'Declare two integer variables and print their sum. The transpiler should convert your C code to Python automatically.',
+    hint:'Use: int a = 5; int b = 3; then printf(a+b);',
+    example:'Input C: int a = 5; int b = 3; printf(a + b);\nExpected: print(5 + 3) → 8',
+    starter:'int a = 5;\nint b = 3;\nprintf(a + b);',
+    test: code => code.includes('printf') && /int\s+\w+\s*=/.test(code)
+  },
+  {
+    id:2, title:'Average of Two Numbers', difficulty:'easy', points:60, stars:1,
+    desc:'Find and print the average of two numbers. Remember: in C, integer division truncates, but our transpiler handles float conversion.',
+    hint:'Declare two integers. The average is (a + b) / 2.',
+    example:'Input: a=10, b=4 → Average = 7',
+    starter:'int a = 10;\nint b = 4;\nprintf(a + b);',
+    test: code => /printf/.test(code) && /int\s+\w+/.test(code)
+  },
+  {
+    id:3, title:'Check if Number is Positive', difficulty:'easy', points:70, stars:1,
+    desc:'Write a program using an if statement to check if a variable is greater than zero, and print the variable.',
+    hint:'Use: if (a > 0) { printf(a); }',
+    example:'a = 5 → prints 5\na = -1 → prints nothing',
+    starter:'int a = 5;\nif (a > 0) {\n    printf(a);\n}',
+    test: code => /if\s*\(/.test(code) && /printf/.test(code)
+  },
+  {
+    id:4, title:'Count Down with While', difficulty:'medium', points:100, stars:2,
+    desc:'Use a while loop to count down from 5 to 1, printing each number.',
+    hint:'Initialize a = 5, while (a > 0), print a then decrement: a = a - 1;',
+    example:'Output: 5, 4, 3, 2, 1',
+    starter:'int a = 5;\nwhile (a > 0) {\n    printf(a);\n    a = a - 1;\n}',
+    test: code => /while\s*\(/.test(code) && /printf/.test(code)
+  },
+  {
+    id:5, title:'Sum of N Numbers', difficulty:'medium', points:120, stars:2,
+    desc:'Compute the sum of numbers from 1 to 5 using a while loop and a sum variable.',
+    hint:'int sum = 0; int i = 1; while (i <= 5) { sum = sum + i; i = i + 1; }',
+    example:'1+2+3+4+5 = 15',
+    starter:'int sum = 0;\nint i = 1;\nwhile (i <= 5) {\n    sum = sum + i;\n    i = i + 1;\n}\nprintf(sum);',
+    test: code => /while/.test(code) && /sum\s*=/.test(code)
+  },
+  {
+    id:6, title:'Max of Three Numbers', difficulty:'medium', points:130, stars:2,
+    desc:'Given three integers, find and print the maximum using if-else conditions.',
+    hint:'Compare a > b and a > c to find the max.',
+    example:'a=3, b=7, c=5 → max = 7',
+    starter:'int a = 3;\nint b = 7;\nint c = 5;\nif (a > b) {\n    printf(a);\n} else {\n    printf(b);\n}',
+    test: code => /if\s*\(/.test(code) && /else/.test(code) && /printf/.test(code)
+  },
+  {
+    id:7, title:'Break in a Loop', difficulty:'hard', points:160, stars:3,
+    desc:'Write a loop from 10 down to 1, but use "break" to stop when the counter hits 5.',
+    hint:'while (a > 0) { if (a == 5) { break; } ... }',
+    example:'Prints: 10, 9, 8, 7, 6 then stops',
+    starter:'int a = 10;\nwhile (a > 0) {\n    if (a == 5) {\n        break;\n    }\n    printf(a);\n    a = a - 1;\n}',
+    test: code => /break/.test(code) && /while/.test(code) && /if\s*\(/.test(code)
+  },
+  {
+    id:8, title:'Nested Conditions', difficulty:'hard', points:180, stars:3,
+    desc:'Combine a while loop with if-else to categorize numbers: print the number if > 3, skip if == 3, otherwise print it negated.',
+    hint:'while loop with nested if / else if / else inside.',
+    example:'For i from 5 to 1: prints 5, 4, skips 3, prints -2, -1',
+    starter:'int i = 5;\nwhile (i > 0) {\n    if (i > 3) {\n        printf(i);\n    } else {\n        printf(i);\n    }\n    i = i - 1;\n}',
+    test: code => /while/.test(code) && /if\s*\(/.test(code) && /else/.test(code)
+  }
+];
+
+const BADGES = [
+  {id:'first',name:'First Blood',icon:'🩸',req:'Solve your first challenge',check:s=>s.solved.size>=1},
+  {id:'trio',name:'Hat Trick',icon:'🎩',req:'Solve 3 challenges',check:s=>s.solved.size>=3},
+  {id:'half',name:'Halfway There',icon:'🌗',req:'Solve 4 challenges',check:s=>s.solved.size>=4},
+  {id:'all',name:'Completionist',icon:'💎',req:'Solve all challenges',check:s=>s.solved.size>=CHALLENGES.length},
+  {id:'looper',name:'Loop Master',icon:'🔄',req:'Solve a while loop challenge',check:s=>s.solved.has(4)||s.solved.has(5)||s.solved.has(7)},
+  {id:'cond',name:'Logic Gate',icon:'⚡',req:'Use if-else in a solution',check:s=>s.solved.has(3)||s.solved.has(6)||s.solved.has(8)},
+];
+
+const LEADERBOARD = [
+  {name:'Arjun K.',pts:720,color:'#7c6fff'},
+  {name:'Priya M.',pts:610,color:'#f472b6'},
+  {name:'Rahul S.',pts:540,color:'#34d399'},
+  {name:'Neha T.',pts:490,color:'#60a5fa'},
+  {name:'You',pts:0,color:'#00e5a0',isMe:true},
+  {name:'Karan B.',pts:320,color:'#fb923c'},
+  {name:'Anjali R.',pts:200,color:'#a78bfa'},
+];
+
+// ══════════════════════════════════════════════
+// C → PYTHON TRANSPILER (core logic)
+// ══════════════════════════════════════════════
+function transpile(cCode) {
+  let lines = cCode.split('\n');
+  let pyLines = [];
+  let indent = 0;
+  let errors = [];
+
+  const getIndent = () => '    '.repeat(indent);
+
+  for (let raw of lines) {
+    let line = raw.trim();
+    if (!line) { pyLines.push(''); continue; }
+
+    // Skip closing braces — handled by indent
+    if (line === '}') { indent = Math.max(0, indent - 1); continue; }
+
+    // Remove trailing semicolon
+    let stmt = line.replace(/;$/, '').trim();
+
+    // int declaration: int a = expr;
+    let declMatch = stmt.match(/^(int|float)\s+(\w+)\s*=\s*(.+)$/);
+    if (declMatch) {
+      let [, type, name, expr] = declMatch;
+      let pyExpr = convertExpr(expr);
+      pyLines.push(getIndent() + `${name} = ${pyExpr}`);
+      continue;
+    }
+
+    // assignment: a = expr;
+    let assignMatch = stmt.match(/^(\w+)\s*=\s*(.+)$/);
+    if (assignMatch && !stmt.startsWith('if') && !stmt.startsWith('while')) {
+      let [, name, expr] = assignMatch;
+      let pyExpr = convertExpr(expr);
+      pyLines.push(getIndent() + `${name} = ${pyExpr}`);
+      continue;
+    }
+
+    // printf(expr);
+    let printMatch = stmt.match(/^printf\((.+)\)$/);
+    if (printMatch) {
+      let expr = printMatch[1].trim();
+      let pyExpr = convertExpr(expr);
+      pyLines.push(getIndent() + `print(${pyExpr})`);
+      continue;
+    }
+
+    // if (cond) {
+    let ifMatch = stmt.match(/^if\s*\((.+)\)\s*\{?$/);
+    if (ifMatch) {
+      let cond = convertCond(ifMatch[1]);
+      pyLines.push(getIndent() + `if ${cond}:`);
+      if (stmt.endsWith('{')) indent++;
+      continue;
+    }
+
+    // } else {  or  else {
+    if (stmt === '} else {' || stmt === 'else {') {
+      indent = Math.max(0, indent - 1);
+      pyLines.push(getIndent() + 'else:');
+      indent++;
+      continue;
+    }
+
+    // while (cond) {
+    let whileMatch = stmt.match(/^while\s*\((.+)\)\s*\{?$/);
+    if (whileMatch) {
+      let cond = convertCond(whileMatch[1]);
+      pyLines.push(getIndent() + `while ${cond}:`);
+      if (stmt.endsWith('{')) indent++;
+      continue;
+    }
+
+    // break / continue
+    if (stmt === 'break') { pyLines.push(getIndent() + 'break'); continue; }
+    if (stmt === 'continue') { pyLines.push(getIndent() + 'continue'); continue; }
+
+    // Opening brace alone
+    if (stmt === '{') { indent++; continue; }
+
+    // Unknown — pass through with comment
+    if (line && line !== '') {
+      pyLines.push(getIndent() + `# [?] ${line}`);
+    }
+  }
+
+  return pyLines.join('\n').trim();
+}
+
+function convertExpr(expr) {
+  // Convert C operators to Python
+  return expr
+    .replace(/\s*==\s*/g, ' == ')
+    .replace(/\s*!=\s*/g, ' != ')
+    .replace(/\s*>=\s*/g, ' >= ')
+    .replace(/\s*<=\s*/g, ' <= ')
+    .replace(/\s*>\s*/g, ' > ')
+    .replace(/\s*<\s*/g, ' < ')
+    .trim();
+}
+
+function convertCond(cond) {
+  return convertExpr(cond.trim());
+}
+
+function evalPython(pyCode) {
+  // Simulate Python execution for simple cases
+  let output = [];
+  let vars = {};
+  let lines = pyCode.split('\n').filter(l => l.trim());
+  
+  function evalExpr(expr, localVars) {
+    let v = {...vars, ...localVars};
+    try {
+      let e = expr.trim();
+      for (let [k, val] of Object.entries(v)) {
+        e = e.replace(new RegExp('\\b' + k + '\\b', 'g'), val);
+      }
+      // eslint-disable-next-line no-eval
+      return Function('"use strict"; return (' + e + ')')();
+    } catch { return expr; }
+  }
+
+  function execLines(ls, localVars = {}) {
+    let i = 0;
+    let loopGuard = 0;
+    while (i < ls.length) {
+      let line = ls[i];
+      let trimmed = line.trim();
+      let depth = (line.match(/^(\s*)/)[1].length) / 4;
+
+      if (!trimmed || trimmed.startsWith('#')) { i++; continue; }
+
+      // Assignment
+      let asgn = trimmed.match(/^(\w+)\s*=\s*(.+)$/);
+      if (asgn && !trimmed.startsWith('if') && !trimmed.startsWith('while') && !trimmed.startsWith('else') && !trimmed.startsWith('print')) {
+        let val = evalExpr(asgn[2], localVars);
+        if (asgn[1] in localVars) localVars[asgn[1]] = val;
+        else vars[asgn[1]] = val;
+        i++; continue;
+      }
+
+      // print
+      let prnt = trimmed.match(/^print\((.+)\)$/);
+      if (prnt) {
+        let val = evalExpr(prnt[1], localVars);
+        output.push(String(val));
+        i++; continue;
+      }
+
+      // if block
+      let ifM = trimmed.match(/^if (.+):$/);
+      if (ifM) {
+        let cond = !!evalExpr(ifM[1], localVars);
+        let block = getBlock(ls, i + 1, depth);
+        let elseBlock = [];
+        let endI = i + 1 + block.length;
+        if (endI < ls.length && ls[endI].trim() === 'else:') {
+          elseBlock = getBlock(ls, endI + 1, depth);
+          endI = endI + 1 + elseBlock.length;
+        }
+        if (cond) execLines(block, {...vars, ...localVars});
+        else if (elseBlock.length) execLines(elseBlock, {...vars, ...localVars});
+        i = endI; continue;
+      }
+
+      // while loop
+      let whileM = trimmed.match(/^while (.+):$/);
+      if (whileM) {
+        let block = getBlock(ls, i + 1, depth);
+        let broken = false;
+        loopGuard = 0;
+        while (++loopGuard < 200 && !!evalExpr(whileM[1], {...vars, ...localVars})) {
+          let bk = execLinesRet(block, {...vars, ...localVars});
+          if (bk === 'break') { broken = true; break; }
+        }
+        i = i + 1 + block.length; continue;
+      }
+
+      i++;
+    }
+  }
+
+  function execLinesRet(ls, localVars) {
+    let loopGuard = 0;
+    let i = 0;
+    while (i < ls.length) {
+      let trimmed = ls[i].trim();
+      if (!trimmed || trimmed.startsWith('#')) { i++; continue; }
+      if (trimmed === 'break') return 'break';
+      if (trimmed === 'continue') return 'continue';
+      let depth = (ls[i].match(/^(\s*)/)[1].length) / 4;
+
+      let asgn = trimmed.match(/^(\w+)\s*=\s*(.+)$/);
+      if (asgn && !trimmed.startsWith('if') && !trimmed.startsWith('while') && !trimmed.startsWith('print')) {
+        let val = evalExpr(asgn[2], localVars);
+        vars[asgn[1]] = val;
+        localVars[asgn[1]] = val;
+        i++; continue;
+      }
+
+      let prnt = trimmed.match(/^print\((.+)\)$/);
+      if (prnt) { output.push(String(evalExpr(prnt[1], localVars))); i++; continue; }
+
+      let ifM = trimmed.match(/^if (.+):$/);
+      if (ifM) {
+        let cond = !!evalExpr(ifM[1], localVars);
+        let block = getBlock(ls, i + 1, depth);
+        let elseBlock = [];
+        let endI = i + 1 + block.length;
+        if (endI < ls.length && ls[endI].trim() === 'else:') {
+          elseBlock = getBlock(ls, endI + 1, depth);
+          endI = endI + 1 + elseBlock.length;
+        }
+        if (cond) { let r = execLinesRet(block, {...localVars}); if (r === 'break') return 'break'; }
+        else if (elseBlock.length) { let r = execLinesRet(elseBlock, {...localVars}); if (r === 'break') return 'break'; }
+        i = endI; continue;
+      }
+
+      i++;
+    }
+  }
+
+  function getBlock(ls, start, parentDepth) {
+    let block = [];
+    for (let j = start; j < ls.length; j++) {
+      let l = ls[j];
+      if (!l.trim()) { block.push(l); continue; }
+      let d = (l.match(/^(\s*)/)[1].length) / 4;
+      if (d <= parentDepth) break;
+      block.push(l);
+    }
+    return block;
+  }
+
+  try {
+    execLines(lines);
+    return output.length > 0 ? output.join('\n') : '(no output)';
+  } catch (e) {
+    return 'Runtime error: ' + e.message;
+  }
+}
+
+// ══════════════════════════════════════════════
+// UI FUNCTIONS
+// ══════════════════════════════════════════════
+function showLanding() { setScreen('screen-landing'); }
+function showAuth() { setScreen('screen-auth'); }
+
+function setScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-login').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('tab-signup').style.display = tab === 'signup' ? '' : 'none';
+  event.target.classList.add('active');
+}
+
+function doLogin() {
+  let user = document.getElementById('login-user').value.trim() || 'User';
+  if (!user) return showToast('Enter a username', false);
+  loginAs(user);
+}
+
+function doSignup() {
+  let name = document.getElementById('su-name').value.trim();
+  let user = document.getElementById('su-user').value.trim();
+  if (!user) return showToast('Fill in all fields', false);
+  loginAs(user || name || 'User');
+}
+
+function guestLogin() { loginAs('Guest'); }
+
+function loginAs(name) {
+  state.user = name;
+  state.points = 0;
+  state.stars = 0;
+  state.solved = new Set();
+  document.getElementById('nav-avatar').textContent = name[0].toUpperCase();
+  document.getElementById('nav-username').textContent = name;
+  updateNavPoints();
+  setScreen('screen-app');
+  renderChallenges();
+  showPage('challenges');
+}
+
+function logout() {
+  state.user = null;
+  setScreen('screen-landing');
+}
+
+function updateNavPoints() {
+  document.getElementById('nav-points').textContent = `⭐ ${state.points} pts`;
+}
+
+function showPage(page) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.app-content').forEach(p => p.classList.remove('visible'));
+  document.getElementById('page-' + page).classList.add('visible');
+  event && event.target && event.target.classList && event.target.classList.add('active');
+  if (page === 'awards') renderAwards();
+}
+
+// ── CHALLENGES ──
+function renderChallenges() {
+  let list = document.getElementById('challenges-list');
+  list.innerHTML = CHALLENGES.map(ch => `
+    <div class="challenge-card ${state.solved.has(ch.id) ? 'solved' : ''}" onclick="openChallenge(${ch.id})">
+      <div class="ch-header">
+        <span class="ch-num">CHALLENGE ${ch.id}</span>
+        <span class="ch-badge badge-${ch.difficulty}">${ch.difficulty.toUpperCase()}</span>
+      </div>
+      <div class="ch-title">${ch.title}</div>
+      <div class="ch-desc">${ch.desc}</div>
+      <div class="ch-footer">
+        <span class="ch-pts">⭐ ${ch.points} pts · ${'★'.repeat(ch.stars)}</span>
+        ${state.solved.has(ch.id) ? '<span class="ch-solved-badge">✓ Solved</span>' : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function openChallenge(id) {
+  let ch = CHALLENGES.find(c => c.id === id);
+  if (!ch) return;
+  state.currentChallenge = ch;
+
+  document.getElementById('code-editor').value = ch.starter;
+  updateLines();
+  document.getElementById('output-panel').textContent = 'Press "Transpile & Run" to see output...';
+  document.getElementById('output-panel').className = 'output-area';
+
+  document.getElementById('prob-info').innerHTML = `
+    <div class="prob-meta">
+      <span class="ch-badge badge-${ch.difficulty}">${ch.difficulty.toUpperCase()}</span>
+      <span style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">⭐ ${ch.points} pts</span>
+    </div>
+    <div class="prob-title">${ch.title}</div>
+    <p class="prob-desc">${ch.desc}</p>
+    <div class="prob-example-label" style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:.4rem">Example</div>
+    <div class="prob-example">${ch.example}</div>
+    ${state.solved.has(ch.id) ? '<div style="margin-top:.8rem;color:var(--accent);font-size:13px">✓ Already solved!</div>' : ''}
+  `;
+
+  showPage('editor');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+}
+
+function runCode() {
+  let cCode = document.getElementById('code-editor').value;
+  let panel = document.getElementById('output-panel');
+
+  panel.textContent = '⟳ Transpiling...';
+  panel.className = 'output-area';
+
+  setTimeout(() => {
+    try {
+      let pyCode = transpile(cCode);
+      let result = evalPython(pyCode);
+      panel.innerHTML = `<div style="color:var(--muted);font-size:11px;margin-bottom:.6rem;letter-spacing:1px">TRANSPILED PYTHON:</div>${escHtml(pyCode)}\n\n<div style="color:var(--muted);font-size:11px;margin:.8rem 0 .4rem;letter-spacing:1px">OUTPUT:</div><span style="color:var(--accent)">${escHtml(result)}</span>`;
+      panel.className = 'output-area';
+
+      // Check if challenge passes
+      if (state.currentChallenge && state.currentChallenge.test(cCode)) {
+        let ch = state.currentChallenge;
+        if (!state.solved.has(ch.id)) {
+          state.solved.add(ch.id);
+          state.points += ch.points;
+          state.stars += ch.stars;
+          updateNavPoints();
+          renderChallenges();
+          setTimeout(() => showSuccessModal(ch), 600);
+        } else {
+          showToast('Already solved! Keep experimenting ✓', true);
+        }
+      }
+    } catch(e) {
+      panel.textContent = 'Error: ' + e.message;
+      panel.className = 'output-area error';
+    }
+  }, 300);
+}
+
+function runPlayground() {
+  let cCode = document.getElementById('pg-editor').value;
+  let panel = document.getElementById('pg-output');
+  panel.textContent = '⟳ Transpiling...';
+  setTimeout(() => {
+    try {
+      let py = transpile(cCode);
+      let res = evalPython(py);
+      panel.innerHTML = `<div style="color:var(--muted);font-size:11px;margin-bottom:.5rem;letter-spacing:1px">PYTHON:</div>${escHtml(py)}\n\n<div style="color:var(--muted);font-size:11px;margin:.8rem 0 .4rem;letter-spacing:1px">OUTPUT:</div><span style="color:var(--accent)">${escHtml(res)}</span>`;
+    } catch(e) {
+      panel.textContent = 'Error: ' + e.message;
+      panel.className = 'output-area error';
+    }
+  }, 300);
+}
+
+function escHtml(t) {
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── MODAL ──
+function showSuccessModal(ch) {
+  document.getElementById('modal-icon').textContent = '🎉';
+  document.getElementById('modal-title').textContent = 'Challenge Solved!';
+  document.getElementById('modal-sub').textContent = ch.title;
+  document.getElementById('modal-pts').textContent = `+${ch.points} pts`;
+  document.getElementById('modal-stars').innerHTML = Array(ch.stars).fill('⭐').join(' ');
+  document.getElementById('result-modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('result-modal').classList.remove('show');
+}
+
+function nextChallenge() {
+  closeModal();
+  let curr = state.currentChallenge;
+  let next = CHALLENGES.find(c => c.id === (curr ? curr.id + 1 : 1));
+  if (next) openChallenge(next.id);
+  else {
+    showPage('challenges');
+    document.querySelectorAll('.nav-tab')[0].classList.add('active');
+  }
+}
+
+// ── AWARDS ──
+function renderAwards() {
+  document.getElementById('award-pts').textContent = state.points;
+  let starsEl = document.getElementById('award-stars');
+  starsEl.innerHTML = Array(state.stars).fill('⭐').join('');
+
+  document.getElementById('badges-grid').innerHTML = BADGES.map(b => {
+    let earned = b.check(state);
+    return `
+      <div class="badge-card ${earned ? 'earned' : 'locked'}">
+        <div class="badge-icon">${b.icon}</div>
+        <div class="badge-name">${b.name}</div>
+        <div class="badge-req">${b.req}</div>
+        ${earned ? '<div style="font-size:11px;color:var(--accent);margin-top:4px">✓ Earned</div>' : ''}
+      </div>`;
+  }).join('');
+
+  let lb = [...LEADERBOARD].map(p => ({...p}));
+  lb.find(p => p.isMe).pts = state.points;
+  lb.sort((a, b) => b.pts - a.pts);
+
+  document.getElementById('leaderboard').innerHTML = lb.map((p, i) => {
+    let rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    let rankIcon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+    return `
+      <div class="lb-row ${p.isMe ? 'me' : ''}">
+        <div class="lb-rank ${rankClass}">${rankIcon}</div>
+        <div class="lb-avatar" style="background:${p.color}22;color:${p.color}">${p.name[0]}</div>
+        <div class="lb-name">${p.name}${p.isMe ? ' (You)' : ''}</div>
+        <div class="lb-pts">${p.pts} pts</div>
+      </div>`;
+  }).join('');
+}
+
+// ── TOAST ──
+function showToast(msg, success = true) {
+  let t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (success ? ' success' : '') + ' show';
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── LINE NUMBERS ──
+function updateLines() {
+  let ta = document.getElementById('code-editor');
+  let ln = document.getElementById('line-nums');
+  let lines = ta.value.split('\n').length;
+  ln.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('<br>');
+}
+
+function updatePGLines() {
+  let ta = document.getElementById('pg-editor');
+  let ln = document.getElementById('pg-line-nums');
+  let lines = ta.value.split('\n').length;
+  ln.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('<br>');
+}
+
+function handleTab(e) {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    let t = e.target;
+    let s = t.selectionStart;
+    t.value = t.value.slice(0, s) + '    ' + t.value.slice(t.selectionEnd);
+    t.selectionStart = t.selectionEnd = s + 4;
+  }
+}
+
+// ── INIT ──
+updateLines();
+updatePGLines();
+</script>
+</body>
+</html>
