@@ -25,9 +25,9 @@ class PythonCodeGenerator:
         elif node_type == "while":
             self.handle_while(node)
         elif node["type"] == "break":
-            self.emit(indent + "break")
+            self.append_line(self.indent + "break")
         elif node["type"] == "continue":
-            self.emit(indent + "continue")
+            self.append_line(self.indent + "continue")
         else:
             raise Exception(f"Unsupported IR node: {node_type}")
         

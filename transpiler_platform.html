@@ -3,322 +3,380 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>C→Py Transpiler Platform</title>
+<title>MultiLang Transpiler Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  :root{
-    --bg:#0a0c10;--surface:#111318;--card:#161a22;--border:#252b38;
-    --accent:#00e5a0;--accent2:#7c6fff;--amber:#f59e0b;--red:#ef4444;
-    --text:#f0f4ff;--muted:#8892a4;--dim:#3a4255;
-    --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;--font-mono:'JetBrains Mono',monospace;
-  }
-  html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body)}
-  /* ── GRID NOISE BACKGROUND ── */
-  body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(ellipse 80% 60% at 20% 10%,rgba(0,229,160,0.06),transparent),radial-gradient(ellipse 60% 80% at 80% 80%,rgba(124,111,255,0.08),transparent);pointer-events:none;z-index:0}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#08090d;--surface:#10121a;--cardbg:#13161f;
+  --border:#1e2436;--border2:#252d42;
+  --accent:#00e5a0;--accent2:#7c6fff;--amber:#f59e0b;--red:#ef4444;--blue:#38bdf8;
+  --text:#eef2ff;--muted:#7a85a3;--dim:#2a3045;
+  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;--font-mono:'JetBrains Mono',monospace;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px}
+body::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 70% 50% at 15% 5%,rgba(0,229,160,.07),transparent),
+  radial-gradient(ellipse 50% 70% at 85% 90%,rgba(124,111,255,.09),transparent),
+  radial-gradient(ellipse 40% 40% at 50% 50%,rgba(56,189,248,.03),transparent);
+  pointer-events:none;z-index:0}
+.screen{display:none;position:fixed;inset:0;z-index:10;overflow-y:auto}
+.screen.active{display:flex}
 
-  /* ── SCREENS ── */
-  .screen{display:none;position:fixed;inset:0;z-index:10;overflow-y:auto}
-  .screen.active{display:flex}
+/* ── LANDING ── */
+#screen-landing{flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+.landing-kicker{font-family:var(--font-mono);font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:5px 18px;border-radius:40px;margin-bottom:2rem;animation:fadeUp .5s ease both}
+.landing-title{font-family:var(--font-head);font-size:clamp(3rem,8vw,6rem);font-weight:800;line-height:.95;text-align:center;animation:fadeUp .6s .08s ease both}
+.landing-title .hi{background:linear-gradient(130deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.landing-sub{margin-top:1.4rem;color:var(--muted);font-size:1.05rem;text-align:center;max-width:520px;line-height:1.75;animation:fadeUp .6s .16s ease both}
+.landing-btns{display:flex;gap:12px;margin-top:2.6rem;animation:fadeUp .6s .24s ease both}
+.btn-primary{background:var(--accent);color:#011a0e;font-family:var(--font-body);font-weight:600;font-size:15px;padding:13px 32px;border:none;border-radius:10px;cursor:pointer;transition:all .2s}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,229,160,.3)}
+.btn-ghost{background:transparent;color:var(--text);font-family:var(--font-body);font-weight:500;font-size:15px;padding:13px 28px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;transition:all .2s}
+.btn-ghost:hover{border-color:var(--muted);background:rgba(255,255,255,.04)}
+.lang-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:2.8rem;animation:fadeUp .6s .32s ease both}
+.pill{font-family:var(--font-mono);font-size:11px;padding:5px 14px;border-radius:30px;border:1px solid;font-weight:600;letter-spacing:.5px}
+.pill-c{color:#4ade80;border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.07)}
+.pill-py{color:#60a5fa;border-color:rgba(96,165,250,.3);background:rgba(96,165,250,.07)}
+.pill-cpp{color:#f472b6;border-color:rgba(244,114,182,.3);background:rgba(244,114,182,.07)}
+.pill-java{color:#fb923c;border-color:rgba(251,146,60,.3);background:rgba(251,146,60,.07)}
+.pill-js{color:#fbbf24;border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.07)}
+.pill-arr{color:var(--muted);border-color:transparent;background:transparent;font-size:13px}
 
-  /* ════ LANDING ════ */
-  #screen-landing{flex-direction:column;align-items:center;justify-content:center;gap:0;padding:2rem}
-  .landing-badge{font-family:var(--font-mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);border:1px solid rgba(0,229,160,0.3);padding:6px 16px;border-radius:40px;margin-bottom:2rem;animation:fadeUp .6s ease both}
-  .landing-title{font-family:var(--font-head);font-size:clamp(2.8rem,7vw,5.5rem);font-weight:800;line-height:1;text-align:center;animation:fadeUp .7s .1s ease both}
-  .landing-title span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-  .landing-sub{margin-top:1.2rem;font-size:1.1rem;color:var(--muted);text-align:center;max-width:500px;line-height:1.7;animation:fadeUp .7s .2s ease both}
-  .landing-btns{display:flex;gap:12px;margin-top:2.5rem;animation:fadeUp .7s .3s ease both}
-  .btn-primary{background:var(--accent);color:#021a10;font-family:var(--font-body);font-weight:600;font-size:15px;padding:13px 30px;border:none;border-radius:10px;cursor:pointer;transition:all .2s;letter-spacing:.3px}
-  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,229,160,0.35)}
-  .btn-ghost{background:transparent;color:var(--text);font-family:var(--font-body);font-weight:500;font-size:15px;padding:13px 30px;border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .2s}
-  .btn-ghost:hover{border-color:var(--muted);background:rgba(255,255,255,0.04)}
-  .landing-features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:3.5rem;width:100%;max-width:720px;animation:fadeUp .7s .4s ease both}
-  .feat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.4rem 1.2rem;text-align:center}
-  .feat-icon{font-size:26px;margin-bottom:10px}
-  .feat-title{font-family:var(--font-head);font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
-  .feat-desc{font-size:12px;color:var(--muted);line-height:1.5}
+/* ── AUTH ── */
+#screen-auth{flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:22px;width:100%;max-width:410px;padding:2.5rem 2rem;animation:fadeUp .4s ease both}
+.auth-logo{font-family:var(--font-head);font-size:17px;font-weight:700;color:var(--accent);margin-bottom:2rem;text-align:center;letter-spacing:1px}
+.auth-tabs{display:flex;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:1.8rem}
+.auth-tab{flex:1;padding:9px;text-align:center;font-size:13px;font-weight:500;cursor:pointer;border-radius:7px;transition:all .2s;color:var(--muted)}
+.auth-tab.active{background:var(--surface);color:var(--text)}
+.form-group{margin-bottom:1rem}
+.form-label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;letter-spacing:.8px;text-transform:uppercase}
+.form-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:11px 14px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--dim)}
+.auth-submit{width:100%;background:var(--accent);color:#011a0e;font-weight:600;font-size:15px;padding:12px;border:none;border-radius:10px;cursor:pointer;margin-top:.5rem;transition:all .2s}
+.auth-submit:hover{opacity:.9;transform:translateY(-1px)}
+.auth-back{text-align:center;margin-top:1.2rem;font-size:13px;color:var(--muted);cursor:pointer}
+.auth-back span{color:var(--accent)}
 
-  /* ════ AUTH SCREEN ════ */
-  #screen-auth{flex-direction:column;align-items:center;justify-content:center;padding:2rem}
-  .auth-box{background:var(--card);border:1px solid var(--border);border-radius:20px;width:100%;max-width:420px;padding:2.5rem 2rem;animation:fadeUp .5s ease both}
-  .auth-logo{font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--accent);margin-bottom:2rem;text-align:center;letter-spacing:1px}
-  .auth-tabs{display:flex;gap:0;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:1.8rem}
-  .auth-tab{flex:1;padding:9px;text-align:center;font-size:13px;font-weight:500;cursor:pointer;border-radius:7px;transition:all .2s;color:var(--muted)}
-  .auth-tab.active{background:var(--surface);color:var(--text)}
-  .form-group{margin-bottom:1rem}
-  .form-label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
-  .form-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:11px 14px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;transition:border-color .2s}
-  .form-input:focus{border-color:var(--accent)}
-  .form-input::placeholder{color:var(--dim)}
-  .auth-submit{width:100%;background:var(--accent);color:#021a10;font-weight:600;font-size:15px;padding:12px;border:none;border-radius:10px;cursor:pointer;margin-top:.5rem;transition:all .2s}
-  .auth-submit:hover{opacity:.9;transform:translateY(-1px)}
-  .auth-back{text-align:center;margin-top:1.2rem;font-size:13px;color:var(--muted);cursor:pointer}
-  .auth-back span{color:var(--accent)}
+/* ── NAVBAR ── */
+#screen-app{flex-direction:column;overflow:hidden}
+.navbar{height:54px;background:rgba(16,18,26,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.4rem;gap:1rem;flex-shrink:0;z-index:100}
+.nav-logo{font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-right:.6rem}
+.nav-tabs{display:flex;gap:2px}
+.nav-tab{padding:6px 14px;font-size:13px;font-weight:500;color:var(--muted);border-radius:8px;cursor:pointer;transition:all .15s}
+.nav-tab:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.nav-tab.active{color:var(--text);background:rgba(255,255,255,.08)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.nav-points{font-family:var(--font-mono);font-size:12px;color:var(--accent);background:rgba(0,229,160,.1);padding:3px 10px;border-radius:20px}
+.nav-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+.nav-uname{font-size:13px;color:var(--muted)}
+.nav-logout{background:none;border:none;color:var(--dim);font-size:12px;cursor:pointer;padding:0}
+.nav-logout:hover{color:var(--muted)}
+.app-content{flex:1;overflow-y:auto;display:none;padding:1.8rem 2rem;max-width:1160px;margin:0 auto;width:100%}
+.app-content.visible{display:block}
+.pg-title{font-family:var(--font-head);font-size:24px;font-weight:700;margin-bottom:.3rem}
+.pg-sub{color:var(--muted);font-size:13px;margin-bottom:1.8rem;line-height:1.6}
 
-  /* ════ MAIN APP ════ */
-  #screen-app{flex-direction:column;overflow:hidden}
-  .navbar{height:56px;background:rgba(17,19,24,0.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.5rem;gap:1rem;flex-shrink:0;z-index:100}
-  .nav-logo{font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-right:auto}
-  .nav-tabs{display:flex;gap:2px}
-  .nav-tab{padding:7px 16px;font-size:13px;font-weight:500;color:var(--muted);border-radius:8px;cursor:pointer;transition:all .15s}
-  .nav-tab:hover{color:var(--text);background:rgba(255,255,255,0.05)}
-  .nav-tab.active{color:var(--text);background:rgba(255,255,255,0.08)}
-  .nav-user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
-  .nav-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff}
-  .nav-points{font-family:var(--font-mono);font-size:12px;color:var(--accent);background:rgba(0,229,160,0.1);padding:3px 10px;border-radius:20px}
+/* ── TRANSPILER PAGE ── */
+.transpiler-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.lang-select{background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:9px 14px;color:var(--text);font-family:var(--font-mono);font-size:13px;outline:none;cursor:pointer;transition:border-color .2s}
+.lang-select:focus{border-color:var(--accent)}
+.arrow-label{font-size:18px;color:var(--muted)}
+.run-btn{background:var(--accent);color:#011a0e;font-family:var(--font-body);font-weight:700;font-size:14px;padding:9px 24px;border:none;border-radius:10px;cursor:pointer;transition:all .2s;margin-left:auto}
+.run-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,229,160,.28)}
+.transpiler-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;height:calc(100vh - 230px);min-height:400px}
+.editor-panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+.panel-hdr{padding:.7rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:8px}
+.panel-name{font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase}
+.panel-badge{font-family:var(--font-mono);font-size:11px;padding:2px 9px;border-radius:6px;font-weight:600}
+.badge-c{background:rgba(74,222,128,.12);color:#4ade80}
+.badge-py{background:rgba(96,165,250,.12);color:#60a5fa}
+.badge-cpp{background:rgba(244,114,182,.12);color:#f472b6}
+.badge-java{background:rgba(251,146,60,.12);color:#fb923c}
+.badge-js{background:rgba(251,191,36,.12);color:#fbbf24}
+.editor-wrap{flex:1;position:relative;overflow:hidden}
+.line-nums{position:absolute;left:0;top:0;padding:1rem 0 1rem 8px;font-family:var(--font-mono);font-size:13px;line-height:1.7;color:var(--dim);pointer-events:none;z-index:1;width:2.2rem;text-align:right;user-select:none}
+textarea.code-edit{position:absolute;inset:0;background:transparent;border:none;outline:none;color:var(--text);font-family:var(--font-mono);font-size:13px;line-height:1.7;padding:1rem 1rem 1rem 2.8rem;resize:none;z-index:2;caret-color:var(--accent)}
+.output-area{flex:1;overflow-y:auto;padding:1rem;font-family:var(--font-mono);font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap}
+.out-label{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:.4rem;display:block}
+.out-divider{border:none;border-top:1px solid var(--border);margin:.8rem 0}
+.out-exec{color:var(--accent)}
+.out-error{color:var(--red)}
 
-  .app-content{flex:1;overflow-y:auto;display:none;padding:2rem;max-width:1100px;margin:0 auto;width:100%}
-  .app-content.visible{display:block}
+/* ── CHALLENGES ── */
+.challenges-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.ch-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.4rem;cursor:pointer;transition:all .22s;position:relative;overflow:hidden}
+.ch-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,229,160,.04),transparent);opacity:0;transition:opacity .3s}
+.ch-card:hover{border-color:rgba(0,229,160,.28);transform:translateY(-2px)}
+.ch-card:hover::after{opacity:1}
+.ch-card.solved{border-color:rgba(0,229,160,.18);background:linear-gradient(140deg,rgba(0,229,160,.05),var(--surface))}
+.ch-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem}
+.ch-num{font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:2px;text-transform:uppercase}
+.diff-badge{font-size:10px;padding:2px 9px;border-radius:20px;font-weight:600;letter-spacing:.5px}
+.diff-easy{background:rgba(0,229,160,.14);color:var(--accent)}
+.diff-medium{background:rgba(245,158,11,.14);color:var(--amber)}
+.diff-hard{background:rgba(239,68,68,.14);color:var(--red)}
+.ch-title{font-family:var(--font-head);font-size:15px;font-weight:600;margin-bottom:.35rem}
+.ch-desc{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:.9rem}
+.ch-foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px}
+.ch-pts{font-family:var(--font-mono);font-size:12px;color:var(--accent)}
+.ch-lang-tag{font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600}
+.solved-mark{font-size:11px;color:var(--accent);background:rgba(0,229,160,.1);padding:2px 10px;border-radius:20px}
 
-  /* ════ CHALLENGES PAGE ════ */
-  .page-title{font-family:var(--font-head);font-size:26px;font-weight:700;margin-bottom:.4rem}
-  .page-sub{color:var(--muted);font-size:14px;margin-bottom:2rem}
-  .challenges-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-  .challenge-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.4rem;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
-  .challenge-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,229,160,0.03),transparent);opacity:0;transition:opacity .3s}
-  .challenge-card:hover{border-color:rgba(0,229,160,0.3);transform:translateY(-2px)}
-  .challenge-card:hover::before{opacity:1}
-  .challenge-card.solved{border-color:rgba(0,229,160,0.2);background:linear-gradient(135deg,rgba(0,229,160,0.05),var(--card))}
-  .ch-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.8rem}
-  .ch-num{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:2px;text-transform:uppercase}
-  .ch-badge{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:600;letter-spacing:.5px}
-  .badge-easy{background:rgba(0,229,160,0.15);color:var(--accent)}
-  .badge-medium{background:rgba(245,158,11,0.15);color:var(--amber)}
-  .badge-hard{background:rgba(239,68,68,0.15);color:var(--red)}
-  .ch-title{font-family:var(--font-head);font-size:16px;font-weight:600;margin-bottom:.4rem}
-  .ch-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:1rem}
-  .ch-footer{display:flex;align-items:center;justify-content:space-between}
-  .ch-pts{font-family:var(--font-mono);font-size:12px;color:var(--accent)}
-  .ch-solved-badge{font-size:11px;color:var(--accent);background:rgba(0,229,160,0.1);padding:3px 10px;border-radius:20px}
+/* ── CHALLENGE EDITOR ── */
+.back-btn{background:none;border:none;color:var(--muted);font-family:var(--font-body);font-size:13px;cursor:pointer;padding:0;margin-bottom:1rem;transition:color .2s}
+.back-btn:hover{color:var(--text)}
+.editor-full-grid{display:grid;grid-template-columns:320px 1fr;gap:14px;height:calc(100vh - 170px);min-height:440px}
+.prob-panel{display:flex;flex-direction:column;gap:12px}
+.prob-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.3rem}
+.prob-meta{display:flex;gap:8px;align-items:center;margin-bottom:.7rem;flex-wrap:wrap}
+.prob-title{font-family:var(--font-head);font-size:17px;font-weight:700;margin-bottom:.5rem}
+.prob-desc{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:.9rem}
+.prob-ex-label{font-size:10px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:.3rem}
+.prob-ex{background:var(--bg);border-radius:9px;padding:.7rem .9rem;font-family:var(--font-mono);font-size:11.5px;color:var(--text);line-height:1.6;white-space:pre-wrap}
+.run-full-btn{background:var(--accent);color:#011a0e;font-family:var(--font-body);font-weight:700;font-size:14px;padding:11px;border:none;border-radius:10px;cursor:pointer;transition:all .2s;width:100%;flex-shrink:0}
+.run-full-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,229,160,.25)}
 
-  /* ════ EDITOR PAGE ════ */
-  .editor-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;height:calc(100vh - 56px - 4rem)}
-  .editor-panel{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
-  .panel-header{padding:.8rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-  .panel-title{font-family:var(--font-mono);font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
-  .panel-lang{font-family:var(--font-mono);font-size:11px;color:var(--accent);background:rgba(0,229,160,0.1);padding:2px 8px;border-radius:6px}
-  .editor-area{flex:1;position:relative;overflow:hidden}
-  textarea.code-editor{position:absolute;inset:0;background:transparent;border:none;outline:none;color:var(--text);font-family:var(--font-mono);font-size:13px;line-height:1.7;padding:1rem;resize:none;z-index:2;caret-color:var(--accent)}
-  .line-nums{position:absolute;left:0;top:0;padding:1rem 0 1rem .5rem;font-family:var(--font-mono);font-size:13px;line-height:1.7;color:var(--dim);pointer-events:none;z-index:1;width:2rem;text-align:right}
-  .output-area{flex:1;overflow-y:auto;padding:1rem;font-family:var(--font-mono);font-size:13px;line-height:1.7;color:var(--text)}
-  .output-area.error{color:var(--red)}
-  .output-area.success{color:var(--accent)}
-  .editor-sidebar{display:flex;flex-direction:column;gap:12px}
-  .problem-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.4rem;flex-shrink:0}
-  .prob-title{font-family:var(--font-head);font-size:18px;font-weight:700;margin-bottom:.4rem}
-  .prob-meta{display:flex;align-items:center;gap:8px;margin-bottom:1rem}
-  .prob-desc{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:1rem}
-  .prob-example{background:var(--bg);border-radius:10px;padding:.8rem 1rem;font-family:var(--font-mono);font-size:12px;color:var(--text)}
-  .prob-example-label{font-size:11px;color:var(--muted);margin-bottom:.3rem;letter-spacing:1px;text-transform:uppercase}
-  .btn-run{background:var(--accent);color:#021a10;font-family:var(--font-body);font-weight:600;font-size:14px;padding:11px 20px;border:none;border-radius:10px;cursor:pointer;transition:all .2s;width:100%}
-  .btn-run:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,229,160,0.3)}
-  .btn-run:active{transform:translateY(0)}
-  .btn-back-ch{background:transparent;color:var(--muted);font-family:var(--font-body);font-weight:500;font-size:13px;padding:8px 0;border:none;cursor:pointer;transition:color .2s}
-  .btn-back-ch:hover{color:var(--text)}
+/* ── AWARDS ── */
+.awards-layout{display:grid;grid-template-columns:1fr 300px;gap:18px}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2rem;text-align:center;margin-bottom:16px}
+.stat-pts{font-family:var(--font-head);font-size:64px;font-weight:800;background:linear-gradient(135deg,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.stat-label{font-size:13px;color:var(--muted);margin-top:.3rem}
+.stat-stars{display:flex;justify-content:center;gap:4px;margin-top:.7rem;font-size:20px}
+.badges-wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.badge-tile{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.1rem;text-align:center;transition:all .22s}
+.badge-tile.earned{border-color:rgba(245,158,11,.35);background:linear-gradient(140deg,rgba(245,158,11,.07),var(--surface))}
+.badge-tile.locked{opacity:.4;filter:grayscale(1)}
+.badge-icon{font-size:28px;margin-bottom:.4rem}
+.badge-name{font-family:var(--font-head);font-size:12px;font-weight:600;margin-bottom:.15rem}
+.badge-req{font-size:10px;color:var(--muted);line-height:1.4}
+.badge-check{font-size:10px;color:var(--accent);margin-top:.3rem}
+.lb-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1.4rem}
+.lb-head{font-family:var(--font-head);font-size:16px;font-weight:700;margin-bottom:1rem}
+.lb-row{display:flex;align-items:center;gap:9px;padding:.6rem .4rem;border-radius:10px;transition:background .15s}
+.lb-row:hover{background:rgba(255,255,255,.03)}
+.lb-row.me{background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.14)}
+.lb-rank{font-family:var(--font-mono);font-size:13px;font-weight:600;width:22px;text-align:center;color:var(--muted)}
+.lb-rank.g{color:#fbbf24}.lb-rank.s{color:#94a3b8}.lb-rank.b{color:#b45309}
+.lb-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.lb-name{flex:1;font-size:13px;font-weight:500}
+.lb-pts{font-family:var(--font-mono);font-size:12px;color:var(--accent)}
 
-  /* ════ AWARDS PAGE ════ */
-  .awards-layout{display:grid;grid-template-columns:1fr 320px;gap:20px}
-  .star-display{text-align:center;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.5rem;margin-bottom:20px}
-  .star-count{font-family:var(--font-head);font-size:72px;font-weight:800;background:linear-gradient(135deg,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
-  .star-label{font-size:14px;color:var(--muted);margin-top:.3rem}
-  .badges-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-  .badge-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem;text-align:center;transition:all .25s}
-  .badge-card.earned{border-color:rgba(245,158,11,0.4);background:linear-gradient(135deg,rgba(245,158,11,0.08),var(--card))}
-  .badge-card.locked{opacity:.45}
-  .badge-icon{font-size:30px;margin-bottom:.5rem;filter:grayscale(0)}
-  .badge-card.locked .badge-icon{filter:grayscale(1)}
-  .badge-name{font-family:var(--font-head);font-size:13px;font-weight:600;margin-bottom:.2rem}
-  .badge-req{font-size:11px;color:var(--muted)}
-  .leaderboard-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:1.5rem}
-  .lb-title{font-family:var(--font-head);font-size:18px;font-weight:700;margin-bottom:1.2rem}
-  .lb-row{display:flex;align-items:center;gap:10px;padding:.7rem .5rem;border-radius:10px;transition:background .2s}
-  .lb-row:hover{background:rgba(255,255,255,0.03)}
-  .lb-row.me{background:rgba(0,229,160,0.07);border:1px solid rgba(0,229,160,0.15);border-radius:10px}
-  .lb-rank{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--muted);width:24px;text-align:center;flex-shrink:0}
-  .lb-rank.gold{color:#fbbf24}
-  .lb-rank.silver{color:#94a3b8}
-  .lb-rank.bronze{color:#b45309}
-  .lb-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
-  .lb-name{flex:1;font-size:14px;font-weight:500}
-  .lb-pts{font-family:var(--font-mono);font-size:13px;color:var(--accent)}
+/* ── MODAL ── */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:300;display:none;align-items:center;justify-content:center}
+.modal-ov.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:24px;padding:2.5rem;width:90%;max-width:400px;text-align:center;animation:popIn .3s cubic-bezier(.175,.885,.32,1.275)}
+.modal-icon{font-size:52px;margin-bottom:.8rem}
+.modal-title{font-family:var(--font-head);font-size:22px;font-weight:700;margin-bottom:.4rem}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:.6rem}
+.modal-pts{font-family:var(--font-head);font-size:40px;font-weight:800;color:var(--accent);margin:.8rem 0}
+.modal-stars{display:flex;justify-content:center;gap:5px;font-size:26px;margin-bottom:1.4rem}
+.modal-btns{display:flex;gap:10px;justify-content:center}
+.mbtn{padding:10px 22px;border-radius:10px;font-family:var(--font-body);font-weight:600;font-size:14px;cursor:pointer;transition:all .18s;border:none}
+.mbtn:hover{transform:translateY(-1px)}
+.mbtn.pri{background:var(--accent);color:#011a0e}
+.mbtn.sec{background:transparent;color:var(--muted);border:1px solid var(--border2)}
 
-  /* ════ RESULT MODAL ════ */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center}
-  .modal-overlay.show{display:flex}
-  .modal{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:2.5rem;width:90%;max-width:420px;text-align:center;animation:popIn .3s cubic-bezier(.175,.885,.32,1.275)}
-  .modal-icon{font-size:56px;margin-bottom:.8rem}
-  .modal-title{font-family:var(--font-head);font-size:24px;font-weight:700;margin-bottom:.5rem}
-  .modal-sub{font-size:14px;color:var(--muted);margin-bottom:.8rem}
-  .modal-pts{font-family:var(--font-mono);font-size:36px;font-weight:600;color:var(--accent);margin:1rem 0}
-  .stars-row{display:flex;justify-content:center;gap:6px;font-size:28px;margin-bottom:1.5rem}
-  .modal-btns{display:flex;gap:10px;justify-content:center}
-  .modal-btn{padding:11px 24px;border-radius:10px;font-family:var(--font-body);font-weight:600;font-size:14px;cursor:pointer;transition:all .2s;border:none}
-  .modal-btn.primary{background:var(--accent);color:#021a10}
-  .modal-btn.secondary{background:transparent;color:var(--muted);border:1px solid var(--border)}
-  .modal-btn:hover{transform:translateY(-1px)}
+/* ── TOAST ── */
+.toast{position:fixed;bottom:1.8rem;left:50%;transform:translateX(-50%) translateY(70px);background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:11px 20px;font-size:13px;z-index:500;transition:transform .28s;white-space:nowrap;color:var(--text)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:rgba(0,229,160,.3);color:var(--accent)}
 
-  /* ════ TOAST ════ */
-  .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:13px;z-index:500;transition:transform .3s;white-space:nowrap;color:var(--text)}
-  .toast.show{transform:translateX(-50%) translateY(0)}
-  .toast.success{border-color:rgba(0,229,160,0.3);color:var(--accent)}
+/* ══════════════════════════════════════════
+   AI CHATBOT
+══════════════════════════════════════════ */
+.chat-fab{position:fixed;bottom:2rem;right:2rem;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;z-index:400;box-shadow:0 4px 20px rgba(0,229,160,.35);transition:all .2s;display:none}
+.chat-fab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(0,229,160,.45)}
+.chat-fab.visible{display:flex}
+.chat-fab .notif{position:absolute;top:-2px;right:-2px;width:12px;height:12px;background:var(--red);border-radius:50%;border:2px solid var(--bg);display:none}
+.chat-fab .notif.show{display:block}
 
-  /* ════ ANIMATIONS ════ */
-  @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes popIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .spin{animation:spin 1s linear infinite}
+.chat-window{position:fixed;bottom:5.5rem;right:2rem;width:360px;height:500px;background:var(--surface);border:1px solid var(--border2);border-radius:20px;display:flex;flex-direction:column;z-index:401;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:popIn .25s cubic-bezier(.175,.885,.32,1.275);overflow:hidden;display:none}
+.chat-window.open{display:flex}
+.chat-header{padding:1rem 1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;background:linear-gradient(135deg,rgba(0,229,160,.08),rgba(124,111,255,.06))}
+.chat-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.chat-hinfo{flex:1}
+.chat-hname{font-family:var(--font-head);font-size:14px;font-weight:700}
+.chat-hstatus{font-size:11px;color:var(--accent);display:flex;align-items:center;gap:4px}
+.chat-hstatus::before{content:'';width:6px;height:6px;background:var(--accent);border-radius:50%;display:inline-block}
+.chat-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:6px;transition:all .15s}
+.chat-close:hover{background:rgba(255,255,255,.06);color:var(--text)}
 
-  /* ════ SCROLLBAR ════ */
-  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--dim);border-radius:4px}
+.chat-messages{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.7rem}
+.chat-msg{display:flex;gap:8px;align-items:flex-start;animation:fadeUp .2s ease both}
+.chat-msg.user{flex-direction:row-reverse}
+.msg-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.msg-av.bot{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#011a0e}
+.msg-av.usr{background:var(--border2);color:var(--text)}
+.msg-bubble{max-width:78%;padding:.6rem .9rem;border-radius:14px;font-size:13px;line-height:1.55}
+.chat-msg.bot .msg-bubble{background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:4px}
+.chat-msg.user .msg-bubble{background:rgba(0,229,160,.15);border:1px solid rgba(0,229,160,.25);color:var(--text);border-bottom-right-radius:4px}
+.msg-time{font-size:10px;color:var(--dim);margin-top:.25rem}
+.chat-msg.user .msg-time{text-align:right}
+
+.chat-typing{display:flex;gap:4px;align-items:center;padding:.5rem .9rem;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:14px;border-bottom-left-radius:4px;width:fit-content}
+.chat-typing span{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:bounce .9s ease infinite}
+.chat-typing span:nth-child(2){animation-delay:.15s}
+.chat-typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+.chat-suggestions{padding:.5rem 1rem;display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;border-top:1px solid var(--border)}
+.chat-sug{font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);color:var(--accent);cursor:pointer;transition:all .15s;white-space:nowrap}
+.chat-sug:hover{background:rgba(0,229,160,.16)}
+
+.chat-input-row{padding:.8rem 1rem;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+.chat-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:9px 12px;color:var(--text);font-family:var(--font-body);font-size:13px;outline:none;transition:border-color .2s;resize:none}
+.chat-input:focus{border-color:var(--accent)}
+.chat-send{background:var(--accent);border:none;border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .2s;color:#011a0e;font-size:16px}
+.chat-send:hover{transform:scale(1.06);box-shadow:0 4px 14px rgba(0,229,160,.3)}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:scale(1)}}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
 </style>
 </head>
 <body>
 
-<!-- ── LANDING ── -->
+<!-- ══ LANDING ══ -->
 <div id="screen-landing" class="screen active">
-  <div class="landing-badge">C → Python Transpiler</div>
-  <h1 class="landing-title">Write C.<br><span>Learn Python.</span></h1>
-  <p class="landing-sub">An interactive platform that transpiles C code to Python — learn, solve challenges, and earn rewards.</p>
+  <div class="landing-kicker">Multi-Language Transpiler Platform</div>
+  <h1 class="landing-title">Code in any language.<br><span class="hi">Speak them all.</span></h1>
+  <p class="landing-sub">Transpile between C, Python, C++, Java and JavaScript. Learn how each language expresses the same logic differently — with AI assistance.</p>
   <div class="landing-btns">
     <button class="btn-primary" onclick="showAuth()">Get Started →</button>
     <button class="btn-ghost" onclick="guestLogin()">Try as Guest</button>
   </div>
-  <div class="landing-features">
-    <div class="feat-card">
-      <div class="feat-icon">⚡</div>
-      <div class="feat-title">Live Transpiler</div>
-      <div class="feat-desc">Real C → Python conversion using your transpiler engine</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon">🧩</div>
-      <div class="feat-title">Challenges</div>
-      <div class="feat-desc">Solve progressively harder coding problems</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon">🏆</div>
-      <div class="feat-title">Awards & Stars</div>
-      <div class="feat-desc">Earn stars and badges as you progress</div>
-    </div>
+  <div class="lang-pills">
+    <span class="pill pill-c">C</span><span class="pill pill-arr">→</span>
+    <span class="pill pill-py">Python</span><span class="pill pill-arr">·</span>
+    <span class="pill pill-c">C</span><span class="pill pill-arr">→</span>
+    <span class="pill pill-cpp">C++</span><span class="pill pill-arr">·</span>
+    <span class="pill pill-c">C</span><span class="pill pill-arr">→</span>
+    <span class="pill pill-java">Java</span><span class="pill pill-arr">·</span>
+    <span class="pill pill-c">C</span><span class="pill pill-arr">→</span>
+    <span class="pill pill-js">JS</span><span class="pill pill-arr">·</span>
+    <span class="pill pill-py">Python</span><span class="pill pill-arr">→</span>
+    <span class="pill pill-c">C</span>
   </div>
 </div>
 
-<!-- ── AUTH ── -->
+<!-- ══ AUTH ══ -->
 <div id="screen-auth" class="screen">
   <div class="auth-box">
-    <div class="auth-logo">⚡ C→PY TRANSPILER</div>
+    <div class="auth-logo">⚡ MULTILANG TRANSPILER</div>
     <div class="auth-tabs">
-      <div class="auth-tab active" onclick="switchTab('login')">Sign In</div>
-      <div class="auth-tab" onclick="switchTab('signup')">Sign Up</div>
+      <div class="auth-tab active" onclick="switchTab('login',this)">Sign In</div>
+      <div class="auth-tab" onclick="switchTab('signup',this)">Sign Up</div>
     </div>
     <div id="tab-login">
-      <div class="form-group">
-        <label class="form-label">Username</label>
-        <input class="form-input" type="text" id="login-user" placeholder="Enter username" value="demo">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input class="form-input" type="password" id="login-pass" placeholder="Enter password" value="password">
-      </div>
+      <div class="form-group"><label class="form-label">Username</label><input class="form-input" id="li-user" placeholder="Username" value="demo"></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="li-pass" placeholder="Password" value="password"></div>
       <button class="auth-submit" onclick="doLogin()">Sign In →</button>
     </div>
     <div id="tab-signup" style="display:none">
-      <div class="form-group">
-        <label class="form-label">Full Name</label>
-        <input class="form-input" type="text" id="su-name" placeholder="Your name">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Username</label>
-        <input class="form-input" type="text" id="su-user" placeholder="Choose a username">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input class="form-input" type="password" id="su-pass" placeholder="Create a password">
-      </div>
+      <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="su-name" placeholder="Your name"></div>
+      <div class="form-group"><label class="form-label">Username</label><input class="form-input" id="su-user" placeholder="Choose a username"></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="su-pass" placeholder="Create a password"></div>
       <button class="auth-submit" onclick="doSignup()">Create Account →</button>
     </div>
     <div class="auth-back" onclick="showLanding()">← Back to <span>home</span></div>
   </div>
 </div>
 
-<!-- ── MAIN APP ── -->
+<!-- ══ MAIN APP ══ -->
 <div id="screen-app" class="screen">
   <nav class="navbar">
-    <div class="nav-logo">C→PY</div>
+    <div class="nav-logo">⚡ TRANSPILER</div>
     <div class="nav-tabs">
-      <div class="nav-tab active" onclick="showPage('challenges')">Challenges</div>
-      <div class="nav-tab" onclick="showPage('awards')">Awards</div>
-      <div class="nav-tab" onclick="showPage('playground')">Playground</div>
+      <div class="nav-tab active" onclick="navTo('transpiler',this)">Transpiler</div>
+      <div class="nav-tab" onclick="navTo('challenges',this)">Challenges</div>
+      <div class="nav-tab" onclick="navTo('awards',this)">Awards</div>
     </div>
-    <div class="nav-user">
-      <div class="nav-points" id="nav-points">⭐ 0 pts</div>
-      <div class="nav-avatar" id="nav-avatar">U</div>
-      <span id="nav-username" style="font-size:13px">User</span>
-      <button onclick="logout()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;margin-left:4px">logout</button>
+    <div class="nav-right">
+      <span class="nav-points" id="nav-pts">⭐ 0 pts</span>
+      <div class="nav-avatar" id="nav-av">U</div>
+      <span class="nav-uname" id="nav-un">User</span>
+      <button class="nav-logout" onclick="logout()">logout</button>
     </div>
   </nav>
 
-  <!-- CHALLENGES PAGE -->
-  <div id="page-challenges" class="app-content visible">
-    <div class="page-title">Coding Challenges</div>
-    <p class="page-sub">Write C code — our transpiler converts it to Python. Solve problems to earn stars and points!</p>
-    <div class="challenges-grid" id="challenges-list"></div>
-  </div>
-
-  <!-- EDITOR PAGE -->
-  <div id="page-editor" class="app-content">
-    <button class="btn-back-ch" onclick="showPage('challenges')">← Back to Challenges</button>
-    <div class="editor-layout" style="margin-top:1rem">
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <div class="problem-box" id="prob-info"></div>
-        <button class="btn-run" onclick="runCode()">▶ Transpile & Run</button>
-        <div class="editor-panel" style="flex:1;min-height:180px">
-          <div class="panel-header">
-            <span class="panel-title">Transpiled Python</span>
-            <span class="panel-lang">Python 3</span>
-          </div>
-          <div class="output-area" id="output-panel">Press "Transpile & Run" to see output...</div>
+  <!-- TRANSPILER PAGE -->
+  <div id="page-transpiler" class="app-content visible">
+    <div class="pg-title">Multi-Language Transpiler</div>
+    <p class="pg-sub">Write code → select languages → hit Transpile. You'll see the converted code AND the execution output together.</p>
+    <div class="transpiler-bar">
+      <select class="lang-select" id="src-lang" onchange="updateSrcPlaceholder()">
+        <option value="c">C</option>
+        <option value="python">Python</option>
+      </select>
+      <span class="arrow-label">→</span>
+      <select class="lang-select" id="tgt-lang" onchange="updateTgtBadge()">
+        <option value="python">Python</option>
+        <option value="cpp">C++</option>
+        <option value="java">Java</option>
+        <option value="js">JavaScript</option>
+        <option value="c">C</option>
+      </select>
+      <button class="run-btn" onclick="runTranspiler()">▶ Transpile &amp; Run</button>
+    </div>
+    <div class="transpiler-grid">
+      <div class="editor-panel">
+        <div class="panel-hdr">
+          <span class="panel-name">Source Code</span>
+          <span class="panel-badge badge-c" id="src-badge">C</span>
+        </div>
+        <div class="editor-wrap">
+          <div class="line-nums" id="tp-lnum">1</div>
+          <textarea class="code-edit" id="tp-src" spellcheck="false" style="padding-left:3rem"
+            oninput="syncLines('tp-src','tp-lnum')" onkeydown="handleTab(event)">int a = 5;
+int b = 3;
+printf(a + b);</textarea>
         </div>
       </div>
       <div class="editor-panel">
-        <div class="panel-header">
-          <span class="panel-title">C Code Editor</span>
-          <span class="panel-lang">C Language</span>
+        <div class="panel-hdr">
+          <span class="panel-name">Output</span>
+          <span class="panel-badge badge-py" id="tgt-badge">Python</span>
         </div>
-        <div class="editor-area">
-          <div class="line-nums" id="line-nums">1</div>
-          <textarea class="code-editor" id="code-editor" spellcheck="false" style="padding-left:3rem" oninput="updateLines()" onkeydown="handleTab(event)">int a = 5;</textarea>
-        </div>
+        <div class="output-area" id="tp-out">Hit ▶ Transpile &amp; Run to see output here...</div>
       </div>
     </div>
   </div>
 
-  <!-- PLAYGROUND PAGE -->
-  <div id="page-playground" class="app-content">
-    <div class="page-title">Free Playground</div>
-    <p class="page-sub">Experiment freely — write any C code and see the Python equivalent.</p>
-    <div class="editor-layout">
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <button class="btn-run" onclick="runPlayground()">▶ Transpile & Run</button>
-        <div class="editor-panel" style="flex:1">
-          <div class="panel-header">
-            <span class="panel-title">Python Output</span>
-            <span class="panel-lang">Python 3</span>
+  <!-- CHALLENGES PAGE -->
+  <div id="page-challenges" class="app-content">
+    <div class="pg-title">Coding Challenges</div>
+    <p class="pg-sub">Each challenge is tagged with a source → target language pair. Solve them to earn points and stars! The AI chatbot can help if you're stuck.</p>
+    <div class="challenges-grid" id="ch-list"></div>
+  </div>
+
+  <!-- CHALLENGE EDITOR -->
+  <div id="page-editor" class="app-content">
+    <button class="back-btn" onclick="navTo('challenges',null)">← Back to Challenges</button>
+    <div class="editor-full-grid">
+      <div class="prob-panel">
+        <div class="prob-box" id="prob-info"></div>
+        <button class="run-full-btn" onclick="runChallenge()">▶ Transpile &amp; Run</button>
+        <div class="editor-panel" style="flex:1;min-height:160px">
+          <div class="panel-hdr">
+            <span class="panel-name">Output + Execution</span>
+            <span class="panel-badge badge-py" id="ch-tgt-badge">Python</span>
           </div>
-          <div class="output-area" id="pg-output">Enter C code and hit run...</div>
+          <div class="output-area" id="ch-out">Hit Transpile to see output...</div>
         </div>
       </div>
       <div class="editor-panel">
-        <div class="panel-header">
-          <span class="panel-title">C Code</span>
-          <span class="panel-lang">C Language</span>
+        <div class="panel-hdr">
+          <span class="panel-name">Your Code</span>
+          <span class="panel-badge badge-c" id="ch-src-badge">C</span>
         </div>
-        <div class="editor-area">
-          <div class="line-nums" id="pg-line-nums">1</div>
-          <textarea class="code-editor" id="pg-editor" spellcheck="false" style="padding-left:3rem" oninput="updatePGLines()" onkeydown="handleTab(event)">int a = 10;
-int b = 5;
-if (a > b) {
-    printf(a);
-}</textarea>
+        <div class="editor-wrap">
+          <div class="line-nums" id="ch-lnum">1</div>
+          <textarea class="code-edit" id="ch-editor" spellcheck="false" style="padding-left:3rem"
+            oninput="syncLines('ch-editor','ch-lnum')" onkeydown="handleTab(event)"></textarea>
         </div>
       </div>
     </div>
@@ -326,646 +384,830 @@ if (a > b) {
 
   <!-- AWARDS PAGE -->
   <div id="page-awards" class="app-content">
-    <div class="page-title">Awards & Achievements</div>
-    <p class="page-sub">Your progress, stars, and earned badges.</p>
+    <div class="pg-title">Awards &amp; Achievements</div>
+    <p class="pg-sub">Your total progress, earned badges and leaderboard rank.</p>
     <div class="awards-layout">
       <div>
-        <div class="star-display">
-          <div class="star-count" id="award-pts">0</div>
-          <div class="star-label">Total Points Earned</div>
-          <div style="display:flex;justify-content:center;gap:4px;margin-top:.8rem;font-size:22px" id="award-stars"></div>
+        <div class="stat-box">
+          <div class="stat-pts" id="aw-pts">0</div>
+          <div class="stat-label">Total Points</div>
+          <div class="stat-stars" id="aw-stars"></div>
         </div>
-        <div style="font-family:var(--font-head);font-size:16px;font-weight:600;margin-bottom:1rem">Badges</div>
-        <div class="badges-grid" id="badges-grid"></div>
+        <div style="font-family:var(--font-head);font-size:15px;font-weight:600;margin-bottom:.8rem">Badges</div>
+        <div class="badges-wrap" id="badges-wrap"></div>
       </div>
       <div>
-        <div class="leaderboard-box">
-          <div class="lb-title">🏆 Leaderboard</div>
-          <div id="leaderboard"></div>
+        <div class="lb-box">
+          <div class="lb-head">🏆 Leaderboard</div>
+          <div id="lb-list"></div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ── RESULT MODAL ── -->
-<div class="modal-overlay" id="result-modal">
-  <div class="modal">
-    <div class="modal-icon" id="modal-icon">🎉</div>
-    <div class="modal-title" id="modal-title">Challenge Solved!</div>
-    <div class="modal-sub" id="modal-sub">Great work! Here's your reward:</div>
-    <div class="modal-pts" id="modal-pts">+50 pts</div>
-    <div class="stars-row" id="modal-stars"></div>
-    <div class="modal-btns">
-      <button class="modal-btn secondary" onclick="closeModal()">Close</button>
-      <button class="modal-btn primary" onclick="nextChallenge()">Next →</button>
+<!-- ══ AI CHATBOT FAB ══ -->
+<button class="chat-fab" id="chat-fab" onclick="toggleChat()">🤖
+  <div class="notif" id="chat-notif"></div>
+</button>
+
+<!-- ══ AI CHATBOT WINDOW ══ -->
+<div class="chat-window" id="chat-window">
+  <div class="chat-header">
+    <div class="chat-avatar">🤖</div>
+    <div class="chat-hinfo">
+      <div class="chat-hname">TranspilerBot AI</div>
+      <div class="chat-hstatus">Online · ready to help</div>
     </div>
+    <button class="chat-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div class="chat-messages" id="chat-msgs"></div>
+  <div class="chat-suggestions" id="chat-sugs">
+    <span class="chat-sug" onclick="askSug(this)">Why no semicolons in Python?</span>
+    <span class="chat-sug" onclick="askSug(this)">What is printf in C?</span>
+    <span class="chat-sug" onclick="askSug(this)">Explain while loop</span>
+    <span class="chat-sug" onclick="askSug(this)">Fix my error</span>
+  </div>
+  <div class="chat-input-row">
+    <textarea class="chat-input" id="chat-input" placeholder="Ask anything about the transpiler..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+    <button class="chat-send" onclick="sendChat()">➤</button>
   </div>
 </div>
 
-<!-- ── TOAST ── -->
+<!-- ══ MODAL ══ -->
+<div class="modal-ov" id="modal">
+  <div class="modal">
+    <div class="modal-icon" id="m-icon">🎉</div>
+    <div class="modal-title" id="m-title">Solved!</div>
+    <div class="modal-sub" id="m-sub"></div>
+    <div class="modal-pts" id="m-pts">+0</div>
+    <div class="modal-stars" id="m-stars"></div>
+    <div class="modal-btns">
+      <button class="mbtn sec" onclick="closeModal()">Close</button>
+      <button class="mbtn pri" onclick="nextCh()">Next →</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
-// ══════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════
-let state = {
-  user: null,
-  points: 0,
-  stars: 0,
-  solved: new Set(),
-  currentChallenge: null
+/* ══════════════════════════════════════════
+   LANGUAGE CONFIGS
+══════════════════════════════════════════ */
+const LANG_META = {
+  c:      {label:'C',      badge:'badge-c',    color:'#4ade80'},
+  python: {label:'Python', badge:'badge-py',   color:'#60a5fa'},
+  cpp:    {label:'C++',    badge:'badge-cpp',  color:'#f472b6'},
+  java:   {label:'Java',   badge:'badge-java', color:'#fb923c'},
+  js:     {label:'JS',     badge:'badge-js',   color:'#fbbf24'},
 };
 
-const CHALLENGES = [
-  {
-    id:1, title:'Sum of Two Numbers', difficulty:'easy', points:50, stars:1,
-    desc:'Declare two integer variables and print their sum. The transpiler should convert your C code to Python automatically.',
-    hint:'Use: int a = 5; int b = 3; then printf(a+b);',
-    example:'Input C: int a = 5; int b = 3; printf(a + b);\nExpected: print(5 + 3) → 8',
-    starter:'int a = 5;\nint b = 3;\nprintf(a + b);',
-    test: code => code.includes('printf') && /int\s+\w+\s*=/.test(code)
-  },
-  {
-    id:2, title:'Average of Two Numbers', difficulty:'easy', points:60, stars:1,
-    desc:'Find and print the average of two numbers. Remember: in C, integer division truncates, but our transpiler handles float conversion.',
-    hint:'Declare two integers. The average is (a + b) / 2.',
-    example:'Input: a=10, b=4 → Average = 7',
-    starter:'int a = 10;\nint b = 4;\nprintf(a + b);',
-    test: code => /printf/.test(code) && /int\s+\w+/.test(code)
-  },
-  {
-    id:3, title:'Check if Number is Positive', difficulty:'easy', points:70, stars:1,
-    desc:'Write a program using an if statement to check if a variable is greater than zero, and print the variable.',
-    hint:'Use: if (a > 0) { printf(a); }',
-    example:'a = 5 → prints 5\na = -1 → prints nothing',
-    starter:'int a = 5;\nif (a > 0) {\n    printf(a);\n}',
-    test: code => /if\s*\(/.test(code) && /printf/.test(code)
-  },
-  {
-    id:4, title:'Count Down with While', difficulty:'medium', points:100, stars:2,
-    desc:'Use a while loop to count down from 5 to 1, printing each number.',
-    hint:'Initialize a = 5, while (a > 0), print a then decrement: a = a - 1;',
-    example:'Output: 5, 4, 3, 2, 1',
-    starter:'int a = 5;\nwhile (a > 0) {\n    printf(a);\n    a = a - 1;\n}',
-    test: code => /while\s*\(/.test(code) && /printf/.test(code)
-  },
-  {
-    id:5, title:'Sum of N Numbers', difficulty:'medium', points:120, stars:2,
-    desc:'Compute the sum of numbers from 1 to 5 using a while loop and a sum variable.',
-    hint:'int sum = 0; int i = 1; while (i <= 5) { sum = sum + i; i = i + 1; }',
-    example:'1+2+3+4+5 = 15',
-    starter:'int sum = 0;\nint i = 1;\nwhile (i <= 5) {\n    sum = sum + i;\n    i = i + 1;\n}\nprintf(sum);',
-    test: code => /while/.test(code) && /sum\s*=/.test(code)
-  },
-  {
-    id:6, title:'Max of Three Numbers', difficulty:'medium', points:130, stars:2,
-    desc:'Given three integers, find and print the maximum using if-else conditions.',
-    hint:'Compare a > b and a > c to find the max.',
-    example:'a=3, b=7, c=5 → max = 7',
-    starter:'int a = 3;\nint b = 7;\nint c = 5;\nif (a > b) {\n    printf(a);\n} else {\n    printf(b);\n}',
-    test: code => /if\s*\(/.test(code) && /else/.test(code) && /printf/.test(code)
-  },
-  {
-    id:7, title:'Break in a Loop', difficulty:'hard', points:160, stars:3,
-    desc:'Write a loop from 10 down to 1, but use "break" to stop when the counter hits 5.',
-    hint:'while (a > 0) { if (a == 5) { break; } ... }',
-    example:'Prints: 10, 9, 8, 7, 6 then stops',
-    starter:'int a = 10;\nwhile (a > 0) {\n    if (a == 5) {\n        break;\n    }\n    printf(a);\n    a = a - 1;\n}',
-    test: code => /break/.test(code) && /while/.test(code) && /if\s*\(/.test(code)
-  },
-  {
-    id:8, title:'Nested Conditions', difficulty:'hard', points:180, stars:3,
-    desc:'Combine a while loop with if-else to categorize numbers: print the number if > 3, skip if == 3, otherwise print it negated.',
-    hint:'while loop with nested if / else if / else inside.',
-    example:'For i from 5 to 1: prints 5, 4, skips 3, prints -2, -1',
-    starter:'int i = 5;\nwhile (i > 0) {\n    if (i > 3) {\n        printf(i);\n    } else {\n        printf(i);\n    }\n    i = i - 1;\n}',
-    test: code => /while/.test(code) && /if\s*\(/.test(code) && /else/.test(code)
+const SRC_STARTERS = {
+  c:      `int a = 5;\nint b = 3;\nprintf(a + b);`,
+  python: `a = 5\nb = 3\nprint(a + b)`
+};
+
+/* ══════════════════════════════════════════
+   TRANSPILER ENGINE
+══════════════════════════════════════════ */
+function cExprToIR(expr) {
+  expr = expr.trim();
+  let depth=0, splitIdx=-1, splitOp='';
+  const ops=['==','!=','>=','<=','>','<','+','-','*','/'];
+  for (let i=expr.length-1;i>=0;i--) {
+    if (expr[i]===')') depth++;
+    else if (expr[i]==='(') depth--;
+    if (depth===0) {
+      for (let op of ops) {
+        if (expr.substr(i,op.length)===op && !(op==='-'&&i===0)) {
+          splitIdx=i; splitOp=op; break;
+        }
+      }
+      if (splitIdx!==-1) break;
+    }
   }
+  if (splitIdx!==-1) return {type:'binop',op:splitOp,left:cExprToIR(expr.slice(0,splitIdx)),right:cExprToIR(expr.slice(splitIdx+splitOp.length))};
+  if (expr.startsWith('(')&&expr.endsWith(')')) return cExprToIR(expr.slice(1,-1));
+  if (/^-?\d+(\.\d+)?$/.test(expr)) return {type:'number',value:expr.includes('.')?parseFloat(expr):parseInt(expr)};
+  return {type:'var',name:expr};
+}
+
+function parseC(code) {
+  function parseLines(ls) {
+    let nodes=[],j=0;
+    while (j<ls.length) {
+      let raw=ls[j].trim();
+      if (!raw||raw==='{'||raw==='}') {j++;continue;}
+      let decl=raw.match(/^(int|float)\s+(\w+)\s*=\s*(.+?)\s*;$/);
+      if (decl) {nodes.push({type:'declare',datatype:decl[1],name:decl[2],value:cExprToIR(decl[3])});j++;continue;}
+      let asgn=raw.match(/^(\w+)\s*=\s*(.+?)\s*;$/);
+      if (asgn&&!raw.startsWith('if')&&!raw.startsWith('while')) {nodes.push({type:'assign',name:asgn[1],value:cExprToIR(asgn[2])});j++;continue;}
+      let pr=raw.match(/^printf\((.+?)\)\s*;$/);
+      if (pr) {nodes.push({type:'print',value:cExprToIR(pr[1])});j++;continue;}
+      if (raw==='break;') {nodes.push({type:'break'});j++;continue;}
+      if (raw==='continue;') {nodes.push({type:'continue'});j++;continue;}
+      let ifm=raw.match(/^if\s*\((.+)\)\s*\{?$/);
+      if (ifm) {
+        let cond=cExprToIR(ifm[1]),thenLines=[];
+        if (raw.endsWith('{')) {
+          let depth=1;j++;
+          while(j<ls.length&&depth>0){let t=ls[j].trim();if(t.endsWith('{'))depth++;if(t==='}'||t.startsWith('}'))if(--depth===0)break;thenLines.push(ls[j]);j++;}
+        }
+        let thenNodes=parseLines(thenLines),elseNodes=null;
+        if (j+1<ls.length) {
+          let nx=ls[j+1].trim();
+          if (nx==='} else {'||nx==='else {') {
+            j+=2;let elseLines=[],depth=1;
+            while(j<ls.length&&depth>0){let t=ls[j].trim();if(t.endsWith('{'))depth++;if(t==='}'||t.startsWith('}'))if(--depth===0)break;elseLines.push(ls[j]);j++;}
+            elseNodes=parseLines(elseLines);
+          }
+        }
+        nodes.push({type:'if',condition:cond,then:thenNodes,else:elseNodes});j++;continue;
+      }
+      let wh=raw.match(/^while\s*\((.+)\)\s*\{?$/);
+      if (wh) {
+        let cond=cExprToIR(wh[1]),bodyLines=[];
+        if (raw.endsWith('{')) {
+          let depth=1;j++;
+          while(j<ls.length&&depth>0){let t=ls[j].trim();if(t.endsWith('{'))depth++;if(t==='}'||t.startsWith('}'))if(--depth===0)break;bodyLines.push(ls[j]);j++;}
+        }
+        nodes.push({type:'while',condition:cond,body:parseLines(bodyLines)});j++;continue;
+      }
+      j++;
+    }
+    return nodes;
+  }
+  return parseLines(code.split('\n'));
+}
+
+function parsePython(code) {
+  function pyExpr(expr) {
+    expr=expr.trim();
+    let depth=0,splitIdx=-1,splitOp='';
+    const ops=['==','!=','>=','<=','>','<','+','-','*','/'];
+    for (let i=expr.length-1;i>=0;i--) {
+      if (expr[i]===')') depth++;else if(expr[i]==='(') depth--;
+      if (depth===0) for (let op of ops) if(expr.substr(i,op.length)===op&&!(op==='-'&&i===0)){splitIdx=i;splitOp=op;break;}
+      if (splitIdx!==-1) break;
+    }
+    if (splitIdx!==-1) return {type:'binop',op:splitOp,left:pyExpr(expr.slice(0,splitIdx)),right:pyExpr(expr.slice(splitIdx+splitOp.length))};
+    if (expr.startsWith('(')&&expr.endsWith(')')) return pyExpr(expr.slice(1,-1));
+    if (/^-?\d+(\.\d+)?$/.test(expr)) return {type:'number',value:expr.includes('.')?parseFloat(expr):parseInt(expr)};
+    return {type:'var',name:expr};
+  }
+  function parseBlock(ls,baseIndent) {
+    let nodes=[],j=0;
+    while (j<ls.length) {
+      let raw=ls[j],indent=(raw.match(/^(\s*)/)||['',''])[1].length,t=raw.trim();
+      if (indent<baseIndent||!t){j++;continue;}
+      let asgn=t.match(/^(\w+)\s*=\s*(.+)$/);
+      if (asgn&&!t.startsWith('if')&&!t.startsWith('while')&&!t.startsWith('print')) {
+        let v=parseFloat(asgn[2]);
+        if(!isNaN(v)) nodes.push({type:'declare',datatype:Number.isInteger(v)?'int':'float',name:asgn[1],value:{type:'number',value:v}});
+        else nodes.push({type:'assign',name:asgn[1],value:pyExpr(asgn[2])});
+        j++;continue;
+      }
+      let pm=t.match(/^print\((.+)\)$/);
+      if(pm){nodes.push({type:'print',value:pyExpr(pm[1])});j++;continue;}
+      if(t==='break'){nodes.push({type:'break'});j++;continue;}
+      if(t==='continue'){nodes.push({type:'continue'});j++;continue;}
+      let ifm=t.match(/^if (.+):$/);
+      if(ifm){
+        let cond=pyExpr(ifm[1]),thenLines=[],ni=j+1,ni2=indent+4;
+        while(ni<ls.length&&(ls[ni].trim()===''||(ls[ni].match(/^(\s*)/)||['',''])[1].length>=ni2)){thenLines.push(ls[ni]);ni++;}
+        let thenNodes=parseBlock(thenLines,ni2),elseNodes=null;
+        if(ni<ls.length&&ls[ni].trim()==='else:'){
+          ni++;let elseLines=[],ni3=indent+4;
+          while(ni<ls.length&&(ls[ni].trim()===''||(ls[ni].match(/^(\s*)/)||['',''])[1].length>=ni3)){elseLines.push(ls[ni]);ni++;}
+          elseNodes=parseBlock(elseLines,ni3);
+        }
+        nodes.push({type:'if',condition:cond,then:thenNodes,else:elseNodes});j=ni;continue;
+      }
+      let wm=t.match(/^while (.+):$/);
+      if(wm){
+        let cond=pyExpr(wm[1]),bodyLines=[],ni2=indent+4,ni=j+1;
+        while(ni<ls.length&&(ls[ni].trim()===''||(ls[ni].match(/^(\s*)/)||['',''])[1].length>=ni2)){bodyLines.push(ls[ni]);ni++;}
+        nodes.push({type:'while',condition:cond,body:parseBlock(bodyLines,ni2)});j=ni;continue;
+      }
+      j++;
+    }
+    return nodes;
+  }
+  return parseBlock(code.split('\n'),0);
+}
+
+/* ── IR → Code ── */
+function irToCode(ir,target) {
+  const ind=n=>'    '.repeat(n);
+  let out=[];
+  function expr(e){
+    if(!e)return '?';
+    if(e.type==='number')return String(e.value);
+    if(e.type==='var')return e.name;
+    if(e.type==='binop')return `(${expr(e.left)} ${e.op} ${expr(e.right)})`;
+    return '?';
+  }
+  function emitPy(nodes,d){for(let n of nodes){
+    if(n.type==='declare'||n.type==='assign'){out.push(ind(d)+`${n.name} = ${expr(n.value)}`);continue;}
+    if(n.type==='print'){out.push(ind(d)+`print(${expr(n.value)})`);continue;}
+    if(n.type==='break'){out.push(ind(d)+'break');continue;}
+    if(n.type==='continue'){out.push(ind(d)+'continue');continue;}
+    if(n.type==='if'){out.push(ind(d)+`if ${expr(n.condition)}:`);emitPy(n.then||[],d+1);if(n.else){out.push(ind(d)+'else:');emitPy(n.else,d+1);}continue;}
+    if(n.type==='while'){out.push(ind(d)+`while ${expr(n.condition)}:`);emitPy(n.body||[],d+1);continue;}
+  }}
+  function emitC(nodes,d){for(let n of nodes){
+    if(n.type==='declare'){out.push(ind(d)+`${n.datatype||'int'} ${n.name} = ${expr(n.value)};`);continue;}
+    if(n.type==='assign'){out.push(ind(d)+`${n.name} = ${expr(n.value)};`);continue;}
+    if(n.type==='print'){out.push(ind(d)+`printf("%d\\n", ${expr(n.value)});`);continue;}
+    if(n.type==='break'){out.push(ind(d)+'break;');continue;}
+    if(n.type==='continue'){out.push(ind(d)+'continue;');continue;}
+    if(n.type==='if'){out.push(ind(d)+`if (${expr(n.condition)}) {`);emitC(n.then||[],d+1);if(n.else){out.push(ind(d)+'} else {');emitC(n.else,d+1);}out.push(ind(d)+'}');continue;}
+    if(n.type==='while'){out.push(ind(d)+`while (${expr(n.condition)}) {`);emitC(n.body||[],d+1);out.push(ind(d)+'}');continue;}
+  }}
+  function emitCpp(nodes,d){for(let n of nodes){
+    if(n.type==='declare'){out.push(ind(d)+`${n.datatype||'int'} ${n.name} = ${expr(n.value)};`);continue;}
+    if(n.type==='assign'){out.push(ind(d)+`${n.name} = ${expr(n.value)};`);continue;}
+    if(n.type==='print'){out.push(ind(d)+`std::cout << ${expr(n.value)} << std::endl;`);continue;}
+    if(n.type==='break'){out.push(ind(d)+'break;');continue;}
+    if(n.type==='continue'){out.push(ind(d)+'continue;');continue;}
+    if(n.type==='if'){out.push(ind(d)+`if (${expr(n.condition)}) {`);emitCpp(n.then||[],d+1);if(n.else){out.push(ind(d)+'} else {');emitCpp(n.else,d+1);}out.push(ind(d)+'}');continue;}
+    if(n.type==='while'){out.push(ind(d)+`while (${expr(n.condition)}) {`);emitCpp(n.body||[],d+1);out.push(ind(d)+'}');continue;}
+  }}
+  function emitJava(nodes,d){for(let n of nodes){
+    if(n.type==='declare'){let jt=n.datatype==='float'?'double':'int';out.push(ind(d)+`${jt} ${n.name} = ${expr(n.value)};`);continue;}
+    if(n.type==='assign'){out.push(ind(d)+`${n.name} = ${expr(n.value)};`);continue;}
+    if(n.type==='print'){out.push(ind(d)+`System.out.println(${expr(n.value)});`);continue;}
+    if(n.type==='break'){out.push(ind(d)+'break;');continue;}
+    if(n.type==='continue'){out.push(ind(d)+'continue;');continue;}
+    if(n.type==='if'){out.push(ind(d)+`if (${expr(n.condition)}) {`);emitJava(n.then||[],d+1);if(n.else){out.push(ind(d)+'} else {');emitJava(n.else,d+1);}out.push(ind(d)+'}');continue;}
+    if(n.type==='while'){out.push(ind(d)+`while (${expr(n.condition)}) {`);emitJava(n.body||[],d+1);out.push(ind(d)+'}');continue;}
+  }}
+  function emitJS(nodes,d){for(let n of nodes){
+    if(n.type==='declare'){out.push(ind(d)+`let ${n.name} = ${expr(n.value)};`);continue;}
+    if(n.type==='assign'){out.push(ind(d)+`${n.name} = ${expr(n.value)};`);continue;}
+    if(n.type==='print'){out.push(ind(d)+`console.log(${expr(n.value)});`);continue;}
+    if(n.type==='break'){out.push(ind(d)+'break;');continue;}
+    if(n.type==='continue'){out.push(ind(d)+'continue;');continue;}
+    if(n.type==='if'){out.push(ind(d)+`if (${expr(n.condition)}) {`);emitJS(n.then||[],d+1);if(n.else){out.push(ind(d)+'} else {');emitJS(n.else,d+1);}out.push(ind(d)+'}');continue;}
+    if(n.type==='while'){out.push(ind(d)+`while (${expr(n.condition)}) {`);emitJS(n.body||[],d+1);out.push(ind(d)+'}');continue;}
+  }}
+  if(target==='python'){emitPy(ir,0);return out.join('\n');}
+  if(target==='c'){out.push('#include <stdio.h>','','int main() {');emitC(ir,1);out.push('    return 0;','}');return out.join('\n');}
+  if(target==='cpp'){out.push('#include <iostream>','','int main() {');emitCpp(ir,1);out.push('    return 0;','}');return out.join('\n');}
+  if(target==='java'){out.push('public class Main {','    public static void main(String[] args) {');emitJava(ir,2);out.push('    }','}');return out.join('\n');}
+  if(target==='js'){out.push('(function() {');emitJS(ir,1);out.push('})();');return out.join('\n');}
+  return '// unknown target';
+}
+
+function transpile(srcCode,srcLang,tgtLang) {
+  let ir;
+  if(srcLang==='c') ir=parseC(srcCode);
+  else if(srcLang==='python') ir=parsePython(srcCode);
+  else throw new Error(`Source '${srcLang}' not supported`);
+  return irToCode(ir,tgtLang);
+}
+
+/* ══════════════════════════════════════════
+   EXECUTION ENGINE  (simulates logic output)
+══════════════════════════════════════════ */
+function execIR(ir) {
+  let output=[], vars={};
+  function evalE(e,lv={}) {
+    let v={...vars,...lv};
+    if(e.type==='number') return e.value;
+    if(e.type==='var') return v[e.name]!==undefined?v[e.name]:0;
+    if(e.type==='binop'){
+      let l=evalE(e.left,lv),r=evalE(e.right,lv);
+      switch(e.op){
+        case '+':return l+r;case '-':return l-r;case '*':return l*r;
+        case '/':return r!==0?Math.floor(l/r):0;
+        case '>':return l>r?1:0;case '<':return l<r?1:0;
+        case '>=':return l>=r?1:0;case '<=':return l<=r?1:0;
+        case '==':return l===r?1:0;case '!=':return l!==r?1:0;
+      }
+    }
+    return 0;
+  }
+  function execNodes(nodes,lv={}) {
+    for (let n of nodes) {
+      if(n.type==='declare'||n.type==='assign'){vars[n.name]=evalE(n.value,lv);continue;}
+      if(n.type==='print'){output.push(String(evalE(n.value,lv)));continue;}
+      if(n.type==='if'){
+        if(evalE(n.condition,lv)) execNodes(n.then||[],lv);
+        else if(n.else) execNodes(n.else,lv);
+        continue;
+      }
+      if(n.type==='while'){
+        let guard=0;
+        while(evalE(n.condition,lv)&&++guard<300){
+          let br=false;
+          for(let s of (n.body||[])){
+            if(s.type==='break'){br=true;break;}
+            if(s.type==='declare'||s.type==='assign'){vars[s.name]=evalE(s.value,lv);continue;}
+            if(s.type==='print'){output.push(String(evalE(s.value,lv)));continue;}
+            if(s.type==='if'){
+              if(evalE(s.condition,lv)){
+                for(let si of(s.then||[])){
+                  if(si.type==='break'){br=true;break;}
+                  if(si.type==='declare'||si.type==='assign'){vars[si.name]=evalE(si.value,lv);}
+                  if(si.type==='print')output.push(String(evalE(si.value,lv)));
+                }
+              } else if(s.else) execNodes(s.else,lv);
+              if(br) break;
+            }
+          }
+          if(br) break;
+        }
+        continue;
+      }
+    }
+  }
+  execNodes(ir);
+  return output.length>0?output.join('\n'):'(no output)';
+}
+
+/* ══════════════════════════════════════════
+   CHALLENGES DATA  (15 challenges)
+══════════════════════════════════════════ */
+const CHALLENGES = [
+  {id:1,src:'c',tgt:'python',diff:'easy',pts:50,stars:1,
+   title:'Sum of Two Numbers',
+   desc:'Declare two integers a and b. Print their sum using printf. The transpiler converts C to Python automatically.',
+   example:'int a = 5;\nint b = 3;\nprintf(a + b);\n──────────────\nPython: print((a + b))\nOutput: 8',
+   starter:'int a = 5;\nint b = 3;\nprintf(a + b);',
+   test:c=>/printf/.test(c)&&/int\s+\w+\s*=/.test(c)},
+
+  {id:2,src:'c',tgt:'python',diff:'easy',pts:55,stars:1,
+   title:'Average of Two Numbers',
+   desc:'Declare two integers. Print (a + b) using printf. See the Python equivalent with print().',
+   example:'int a = 10;\nint b = 4;\nprintf(a + b);\n──────────────\nOutput: 14',
+   starter:'int a = 10;\nint b = 4;\nprintf(a + b);',
+   test:c=>/printf/.test(c)&&/int\s+\w+\s*=\s*\d/.test(c)},
+
+  {id:3,src:'c',tgt:'python',diff:'easy',pts:60,stars:1,
+   title:'Sum of Three Numbers',
+   desc:'Declare three integers a, b, c. Add them together and print the result.',
+   example:'int a=2; int b=3; int c=5;\nprintf(a+b+c);\n──────────────\nOutput: 10',
+   starter:'int a = 2;\nint b = 3;\nint c = 5;\nprintf(a + b + c);',
+   test:c=>/printf/.test(c)&&(c.match(/int\s+\w+/g)||[]).length>=3},
+
+  {id:4,src:'c',tgt:'python',diff:'easy',pts:70,stars:1,
+   title:'Simple If Check',
+   desc:'Declare an integer. Use if to check if it is greater than 0, and print it.',
+   example:'int a = 7;\nif (a > 0) {\n    printf(a);\n}\n──────────────\nOutput: 7',
+   starter:'int a = 7;\nif (a > 0) {\n    printf(a);\n}',
+   test:c=>/if\s*\(/.test(c)&&/printf/.test(c)},
+
+  {id:5,src:'c',tgt:'python',diff:'easy',pts:75,stars:1,
+   title:'If-Else Condition',
+   desc:'If a is positive print a, else print 0. Notice how if/else maps between C and Python.',
+   example:'int a = -3;\nif (a > 0) { printf(a); }\nelse { printf(0); }\n──────────────\nOutput: 0',
+   starter:'int a = -3;\nif (a > 0) {\n    printf(a);\n} else {\n    printf(0);\n}',
+   test:c=>/if\s*\(/.test(c)&&/else/.test(c)},
+
+  {id:6,src:'c',tgt:'python',diff:'medium',pts:100,stars:2,
+   title:'Count Down with While',
+   desc:'Use a while loop to count down from 5 to 1 and print each number.',
+   example:'int a = 5;\nwhile (a > 0) { printf(a); a = a - 1; }\n──────────────\nOutput: 5 4 3 2 1',
+   starter:'int a = 5;\nwhile (a > 0) {\n    printf(a);\n    a = a - 1;\n}',
+   test:c=>/while/.test(c)&&/printf/.test(c)},
+
+  {id:7,src:'c',tgt:'python',diff:'medium',pts:110,stars:2,
+   title:'Sum of 1 to N',
+   desc:'Use a while loop to compute the sum of numbers from 1 to 5 and print the total.',
+   example:'sum starts at 0, add 1+2+3+4+5\n──────────────\nOutput: 15',
+   starter:'int sum = 0;\nint i = 1;\nwhile (i <= 5) {\n    sum = sum + i;\n    i = i + 1;\n}\nprintf(sum);',
+   test:c=>/while/.test(c)&&/sum\s*=/.test(c)&&/printf/.test(c)},
+
+  {id:8,src:'c',tgt:'python',diff:'medium',pts:120,stars:2,
+   title:'Find Maximum of Two',
+   desc:'Given two integers, use if-else to find and print the larger one.',
+   example:'int a=3; int b=7;\nif (a > b) { printf(a); }\nelse { printf(b); }\n──────────────\nOutput: 7',
+   starter:'int a = 3;\nint b = 7;\nif (a > b) {\n    printf(a);\n} else {\n    printf(b);\n}',
+   test:c=>/if\s*\(/.test(c)&&/else/.test(c)&&/printf/.test(c)},
+
+  {id:9,src:'c',tgt:'python',diff:'medium',pts:125,stars:2,
+   title:'Break in a Loop',
+   desc:'Loop from 10 downward. Use break to stop when the counter hits 5. Print each number before stopping.',
+   example:'Prints: 10 9 8 7 6 then stops',
+   starter:'int a = 10;\nwhile (a > 0) {\n    if (a == 5) {\n        break;\n    }\n    printf(a);\n    a = a - 1;\n}',
+   test:c=>/break/.test(c)&&/while/.test(c)},
+
+  {id:10,src:'c',tgt:'cpp',diff:'medium',pts:100,stars:2,
+   title:'C to C++: Hello Variable',
+   desc:'Declare a variable and print it. See how printf in C becomes std::cout in C++.',
+   example:'int a = 42;\nprintf(a);\n──────────────\nC++: std::cout << 42 << std::endl;',
+   starter:'int a = 42;\nprintf(a);',
+   test:c=>/printf/.test(c)&&/int\s+\w+/.test(c)},
+
+  {id:11,src:'c',tgt:'cpp',diff:'medium',pts:110,stars:2,
+   title:'C++ Loop',
+   desc:'Write a while loop in C. Watch it convert to C++ with std::cout output statements.',
+   example:'while (i<=5) { printf(i); }\n──────────────\nC++: std::cout << i << std::endl;',
+   starter:'int i = 1;\nwhile (i <= 5) {\n    printf(i);\n    i = i + 1;\n}',
+   test:c=>/while/.test(c)&&/printf/.test(c)},
+
+  {id:12,src:'c',tgt:'java',diff:'medium',pts:120,stars:2,
+   title:'C to Java Types',
+   desc:'Declare int and float variables. Notice how Java converts float to double automatically.',
+   example:'float x = 3;\n──────────────\nJava: double x = 3;',
+   starter:'int a = 10;\nfloat b = 3;\nprintf(a);',
+   test:c=>/int\s+\w+/.test(c)&&/printf/.test(c)},
+
+  {id:13,src:'c',tgt:'java',diff:'hard',pts:160,stars:3,
+   title:'Java While + Break',
+   desc:'Write a C while loop with break. See it convert to Java with System.out.println.',
+   example:'break; stays the same\nprintf → System.out.println',
+   starter:'int a = 10;\nwhile (a > 0) {\n    if (a == 5) {\n        break;\n    }\n    printf(a);\n    a = a - 1;\n}',
+   test:c=>/break/.test(c)&&/while/.test(c)},
+
+  {id:14,src:'c',tgt:'js',diff:'medium',pts:110,stars:2,
+   title:'C to JavaScript',
+   desc:'Declare variables in C. See int become let and printf become console.log in JavaScript.',
+   example:'int a = 5;\n──────────────\nJS: let a = 5;\n    console.log(...)',
+   starter:'int a = 5;\nint b = 10;\nprintf(a + b);',
+   test:c=>/int\s+\w+/.test(c)&&/printf/.test(c)},
+
+  {id:15,src:'python',tgt:'c',diff:'hard',pts:170,stars:3,
+   title:'Python → C',
+   desc:'Write Python code with variables and print. Watch it convert to C with int declarations and printf.',
+   example:'a = 5\nb = 3\nprint(a)\n──────────────\nC: int a = 5;\n   int b = 3;\n   printf("%d\\n", a);',
+   starter:'a = 5\nb = 3\nprint(a)',
+   test:c=>/print\(/.test(c)&&/\w+\s*=\s*\d/.test(c)},
 ];
 
 const BADGES = [
-  {id:'first',name:'First Blood',icon:'🩸',req:'Solve your first challenge',check:s=>s.solved.size>=1},
+  {id:'first',name:'First Blood',icon:'🩸',req:'Solve 1 challenge',check:s=>s.solved.size>=1},
   {id:'trio',name:'Hat Trick',icon:'🎩',req:'Solve 3 challenges',check:s=>s.solved.size>=3},
-  {id:'half',name:'Halfway There',icon:'🌗',req:'Solve 4 challenges',check:s=>s.solved.size>=4},
-  {id:'all',name:'Completionist',icon:'💎',req:'Solve all challenges',check:s=>s.solved.size>=CHALLENGES.length},
-  {id:'looper',name:'Loop Master',icon:'🔄',req:'Solve a while loop challenge',check:s=>s.solved.has(4)||s.solved.has(5)||s.solved.has(7)},
-  {id:'cond',name:'Logic Gate',icon:'⚡',req:'Use if-else in a solution',check:s=>s.solved.has(3)||s.solved.has(6)||s.solved.has(8)},
+  {id:'half',name:'Halfway',icon:'🌗',req:'Solve 7 challenges',check:s=>s.solved.size>=7},
+  {id:'all',name:'Completionist',icon:'💎',req:'Solve all 15 challenges',check:s=>s.solved.size>=15},
+  {id:'looper',name:'Loop Master',icon:'🔄',req:'Solve a while loop challenge',check:s=>[6,7,9,11].some(i=>s.solved.has(i))},
+  {id:'javamaster',name:'Java Jockey',icon:'☕',req:'Solve a Java challenge',check:s=>[12,13].some(i=>s.solved.has(i))},
+  {id:'poly',name:'Polyglot',icon:'🌐',req:'Use 3 different target languages',check:s=>{let t=new Set([...s.solved].map(id=>{let c=CHALLENGES.find(x=>x.id===id);return c?c.tgt:''}));return t.size>=3;}},
+  {id:'pyback',name:'Reverse Gear',icon:'🔁',req:'Solve Python→C challenge',check:s=>s.solved.has(15)},
+  {id:'chatty',name:'Curious Mind',icon:'🧠',req:'Ask the AI chatbot 3 questions',check:s=>s.chatAsked>=3},
 ];
 
-const LEADERBOARD = [
-  {name:'Arjun K.',pts:720,color:'#7c6fff'},
-  {name:'Priya M.',pts:610,color:'#f472b6'},
-  {name:'Rahul S.',pts:540,color:'#34d399'},
-  {name:'Neha T.',pts:490,color:'#60a5fa'},
-  {name:'You',pts:0,color:'#00e5a0',isMe:true},
-  {name:'Karan B.',pts:320,color:'#fb923c'},
-  {name:'Anjali R.',pts:200,color:'#a78bfa'},
+const LEADERBOARD_BASE = [
+  {name:'Arjun K.',pts:920,col:'#7c6fff'},
+  {name:'Priya M.',pts:780,col:'#f472b6'},
+  {name:'Rahul S.',pts:650,col:'#34d399'},
+  {name:'Neha T.',pts:540,col:'#60a5fa'},
+  {name:'Karan B.',pts:400,col:'#fb923c'},
+  {name:'Anjali R.',pts:250,col:'#a78bfa'},
+  {name:'You',pts:0,col:'#00e5a0',isMe:true},
 ];
 
-// ══════════════════════════════════════════════
-// C → PYTHON TRANSPILER (core logic)
-// ══════════════════════════════════════════════
-function transpile(cCode) {
-  let lines = cCode.split('\n');
-  let pyLines = [];
-  let indent = 0;
-  let errors = [];
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+let S={user:null,points:0,stars:0,solved:new Set(),curChallenge:null,chatAsked:0};
 
-  const getIndent = () => '    '.repeat(indent);
+/* ══════════════════════════════════════════
+   SCREENS & NAV
+══════════════════════════════════════════ */
+function setScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function showLanding(){setScreen('screen-landing');}
+function showAuth(){setScreen('screen-auth');}
+function switchTab(t,el){document.querySelectorAll('.auth-tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');document.getElementById('tab-login').style.display=t==='login'?'':'none';document.getElementById('tab-signup').style.display=t==='signup'?'':'none';}
+function doLogin(){loginAs(document.getElementById('li-user').value.trim()||'User');}
+function doSignup(){loginAs(document.getElementById('su-user').value.trim()||document.getElementById('su-name').value.trim()||'User');}
+function guestLogin(){loginAs('Guest');}
+function loginAs(name){
+  S={user:name,points:0,stars:0,solved:new Set(),curChallenge:null,chatAsked:0};
+  document.getElementById('nav-av').textContent=name[0].toUpperCase();
+  document.getElementById('nav-un').textContent=name;
+  updateNav();setScreen('screen-app');renderChallenges();navTo('transpiler',null);
+  document.querySelector('.nav-tab').classList.add('active');
+  document.getElementById('chat-fab').classList.add('visible');
+  addBotMsg("👋 Hi "+name+"! I'm TranspilerBot. Ask me anything about transpiling, errors, or why C and Python differ!");
+  document.getElementById('chat-notif').classList.add('show');
+}
+function logout(){setScreen('screen-landing');document.getElementById('chat-fab').classList.remove('visible');document.getElementById('chat-window').classList.remove('open');}
+function navTo(page,el){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.querySelectorAll('.app-content').forEach(p=>p.classList.remove('visible'));
+  document.getElementById('page-'+page).classList.add('visible');
+  if(page==='awards') renderAwards();
+}
+function updateNav(){document.getElementById('nav-pts').textContent=`⭐ ${S.points} pts`;}
 
-  for (let raw of lines) {
-    let line = raw.trim();
-    if (!line) { pyLines.push(''); continue; }
-
-    // Skip closing braces — handled by indent
-    if (line === '}') { indent = Math.max(0, indent - 1); continue; }
-
-    // Remove trailing semicolon
-    let stmt = line.replace(/;$/, '').trim();
-
-    // int declaration: int a = expr;
-    let declMatch = stmt.match(/^(int|float)\s+(\w+)\s*=\s*(.+)$/);
-    if (declMatch) {
-      let [, type, name, expr] = declMatch;
-      let pyExpr = convertExpr(expr);
-      pyLines.push(getIndent() + `${name} = ${pyExpr}`);
-      continue;
-    }
-
-    // assignment: a = expr;
-    let assignMatch = stmt.match(/^(\w+)\s*=\s*(.+)$/);
-    if (assignMatch && !stmt.startsWith('if') && !stmt.startsWith('while')) {
-      let [, name, expr] = assignMatch;
-      let pyExpr = convertExpr(expr);
-      pyLines.push(getIndent() + `${name} = ${pyExpr}`);
-      continue;
-    }
-
-    // printf(expr);
-    let printMatch = stmt.match(/^printf\((.+)\)$/);
-    if (printMatch) {
-      let expr = printMatch[1].trim();
-      let pyExpr = convertExpr(expr);
-      pyLines.push(getIndent() + `print(${pyExpr})`);
-      continue;
-    }
-
-    // if (cond) {
-    let ifMatch = stmt.match(/^if\s*\((.+)\)\s*\{?$/);
-    if (ifMatch) {
-      let cond = convertCond(ifMatch[1]);
-      pyLines.push(getIndent() + `if ${cond}:`);
-      if (stmt.endsWith('{')) indent++;
-      continue;
-    }
-
-    // } else {  or  else {
-    if (stmt === '} else {' || stmt === 'else {') {
-      indent = Math.max(0, indent - 1);
-      pyLines.push(getIndent() + 'else:');
-      indent++;
-      continue;
-    }
-
-    // while (cond) {
-    let whileMatch = stmt.match(/^while\s*\((.+)\)\s*\{?$/);
-    if (whileMatch) {
-      let cond = convertCond(whileMatch[1]);
-      pyLines.push(getIndent() + `while ${cond}:`);
-      if (stmt.endsWith('{')) indent++;
-      continue;
-    }
-
-    // break / continue
-    if (stmt === 'break') { pyLines.push(getIndent() + 'break'); continue; }
-    if (stmt === 'continue') { pyLines.push(getIndent() + 'continue'); continue; }
-
-    // Opening brace alone
-    if (stmt === '{') { indent++; continue; }
-
-    // Unknown — pass through with comment
-    if (line && line !== '') {
-      pyLines.push(getIndent() + `# [?] ${line}`);
-    }
-  }
-
-  return pyLines.join('\n').trim();
+/* ══════════════════════════════════════════
+   TRANSPILER PAGE
+══════════════════════════════════════════ */
+function updateSrcPlaceholder(){
+  let src=document.getElementById('src-lang').value;
+  document.getElementById('tp-src').value=SRC_STARTERS[src]||'';
+  syncLines('tp-src','tp-lnum');
+  let m=LANG_META[src];
+  let b=document.getElementById('src-badge');
+  b.textContent=m.label;b.className='panel-badge '+m.badge;
+}
+function updateTgtBadge(){
+  let m=LANG_META[document.getElementById('tgt-lang').value];
+  let b=document.getElementById('tgt-badge');
+  b.textContent=m.label;b.className='panel-badge '+m.badge;
 }
 
-function convertExpr(expr) {
-  // Convert C operators to Python
-  return expr
-    .replace(/\s*==\s*/g, ' == ')
-    .replace(/\s*!=\s*/g, ' != ')
-    .replace(/\s*>=\s*/g, ' >= ')
-    .replace(/\s*<=\s*/g, ' <= ')
-    .replace(/\s*>\s*/g, ' > ')
-    .replace(/\s*<\s*/g, ' < ')
-    .trim();
-}
-
-function convertCond(cond) {
-  return convertExpr(cond.trim());
-}
-
-function evalPython(pyCode) {
-  // Simulate Python execution for simple cases
-  let output = [];
-  let vars = {};
-  let lines = pyCode.split('\n').filter(l => l.trim());
-  
-  function evalExpr(expr, localVars) {
-    let v = {...vars, ...localVars};
+function runTranspiler(){
+  let src=document.getElementById('src-lang').value;
+  let tgt=document.getElementById('tgt-lang').value;
+  let code=document.getElementById('tp-src').value;
+  let panel=document.getElementById('tp-out');
+  panel.textContent='⟳ Transpiling...';
+  setTimeout(()=>{
     try {
-      let e = expr.trim();
-      for (let [k, val] of Object.entries(v)) {
-        e = e.replace(new RegExp('\\b' + k + '\\b', 'g'), val);
-      }
-      // eslint-disable-next-line no-eval
-      return Function('"use strict"; return (' + e + ')')();
-    } catch { return expr; }
-  }
-
-  function execLines(ls, localVars = {}) {
-    let i = 0;
-    let loopGuard = 0;
-    while (i < ls.length) {
-      let line = ls[i];
-      let trimmed = line.trim();
-      let depth = (line.match(/^(\s*)/)[1].length) / 4;
-
-      if (!trimmed || trimmed.startsWith('#')) { i++; continue; }
-
-      // Assignment
-      let asgn = trimmed.match(/^(\w+)\s*=\s*(.+)$/);
-      if (asgn && !trimmed.startsWith('if') && !trimmed.startsWith('while') && !trimmed.startsWith('else') && !trimmed.startsWith('print')) {
-        let val = evalExpr(asgn[2], localVars);
-        if (asgn[1] in localVars) localVars[asgn[1]] = val;
-        else vars[asgn[1]] = val;
-        i++; continue;
-      }
-
-      // print
-      let prnt = trimmed.match(/^print\((.+)\)$/);
-      if (prnt) {
-        let val = evalExpr(prnt[1], localVars);
-        output.push(String(val));
-        i++; continue;
-      }
-
-      // if block
-      let ifM = trimmed.match(/^if (.+):$/);
-      if (ifM) {
-        let cond = !!evalExpr(ifM[1], localVars);
-        let block = getBlock(ls, i + 1, depth);
-        let elseBlock = [];
-        let endI = i + 1 + block.length;
-        if (endI < ls.length && ls[endI].trim() === 'else:') {
-          elseBlock = getBlock(ls, endI + 1, depth);
-          endI = endI + 1 + elseBlock.length;
-        }
-        if (cond) execLines(block, {...vars, ...localVars});
-        else if (elseBlock.length) execLines(elseBlock, {...vars, ...localVars});
-        i = endI; continue;
-      }
-
-      // while loop
-      let whileM = trimmed.match(/^while (.+):$/);
-      if (whileM) {
-        let block = getBlock(ls, i + 1, depth);
-        let broken = false;
-        loopGuard = 0;
-        while (++loopGuard < 200 && !!evalExpr(whileM[1], {...vars, ...localVars})) {
-          let bk = execLinesRet(block, {...vars, ...localVars});
-          if (bk === 'break') { broken = true; break; }
-        }
-        i = i + 1 + block.length; continue;
-      }
-
-      i++;
-    }
-  }
-
-  function execLinesRet(ls, localVars) {
-    let loopGuard = 0;
-    let i = 0;
-    while (i < ls.length) {
-      let trimmed = ls[i].trim();
-      if (!trimmed || trimmed.startsWith('#')) { i++; continue; }
-      if (trimmed === 'break') return 'break';
-      if (trimmed === 'continue') return 'continue';
-      let depth = (ls[i].match(/^(\s*)/)[1].length) / 4;
-
-      let asgn = trimmed.match(/^(\w+)\s*=\s*(.+)$/);
-      if (asgn && !trimmed.startsWith('if') && !trimmed.startsWith('while') && !trimmed.startsWith('print')) {
-        let val = evalExpr(asgn[2], localVars);
-        vars[asgn[1]] = val;
-        localVars[asgn[1]] = val;
-        i++; continue;
-      }
-
-      let prnt = trimmed.match(/^print\((.+)\)$/);
-      if (prnt) { output.push(String(evalExpr(prnt[1], localVars))); i++; continue; }
-
-      let ifM = trimmed.match(/^if (.+):$/);
-      if (ifM) {
-        let cond = !!evalExpr(ifM[1], localVars);
-        let block = getBlock(ls, i + 1, depth);
-        let elseBlock = [];
-        let endI = i + 1 + block.length;
-        if (endI < ls.length && ls[endI].trim() === 'else:') {
-          elseBlock = getBlock(ls, endI + 1, depth);
-          endI = endI + 1 + elseBlock.length;
-        }
-        if (cond) { let r = execLinesRet(block, {...localVars}); if (r === 'break') return 'break'; }
-        else if (elseBlock.length) { let r = execLinesRet(elseBlock, {...localVars}); if (r === 'break') return 'break'; }
-        i = endI; continue;
-      }
-
-      i++;
-    }
-  }
-
-  function getBlock(ls, start, parentDepth) {
-    let block = [];
-    for (let j = start; j < ls.length; j++) {
-      let l = ls[j];
-      if (!l.trim()) { block.push(l); continue; }
-      let d = (l.match(/^(\s*)/)[1].length) / 4;
-      if (d <= parentDepth) break;
-      block.push(l);
-    }
-    return block;
-  }
-
-  try {
-    execLines(lines);
-    return output.length > 0 ? output.join('\n') : '(no output)';
-  } catch (e) {
-    return 'Runtime error: ' + e.message;
-  }
+      if(src===tgt){panel.innerHTML='<span class="out-error">⚠ Source and target are the same language.</span>';return;}
+      let ir = src==='c'?parseC(code):parsePython(code);
+      let result=irToCode(ir,tgt);
+      let execOut='';
+      // Only execute if target is python or js (we can simulate)
+      try{ execOut = execIR(ir); } catch(e){ execOut='(execution not available for this conversion)'; }
+      panel.innerHTML=
+        `<span class="out-label">TRANSPILED ${LANG_META[tgt].label.toUpperCase()} CODE</span>`+
+        `<div style="color:var(--text)">${esc(result)}</div>`+
+        `<hr class="out-divider">`+
+        `<span class="out-label">▶ EXECUTION OUTPUT</span>`+
+        `<div class="out-exec">${esc(execOut)}</div>`;
+    }catch(e){panel.innerHTML=`<span class="out-error">Error: ${esc(e.message)}</span>`;}
+  },260);
 }
 
-// ══════════════════════════════════════════════
-// UI FUNCTIONS
-// ══════════════════════════════════════════════
-function showLanding() { setScreen('screen-landing'); }
-function showAuth() { setScreen('screen-auth'); }
-
-function setScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-function switchTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-login').style.display = tab === 'login' ? '' : 'none';
-  document.getElementById('tab-signup').style.display = tab === 'signup' ? '' : 'none';
-  event.target.classList.add('active');
-}
-
-function doLogin() {
-  let user = document.getElementById('login-user').value.trim() || 'User';
-  if (!user) return showToast('Enter a username', false);
-  loginAs(user);
-}
-
-function doSignup() {
-  let name = document.getElementById('su-name').value.trim();
-  let user = document.getElementById('su-user').value.trim();
-  if (!user) return showToast('Fill in all fields', false);
-  loginAs(user || name || 'User');
-}
-
-function guestLogin() { loginAs('Guest'); }
-
-function loginAs(name) {
-  state.user = name;
-  state.points = 0;
-  state.stars = 0;
-  state.solved = new Set();
-  document.getElementById('nav-avatar').textContent = name[0].toUpperCase();
-  document.getElementById('nav-username').textContent = name;
-  updateNavPoints();
-  setScreen('screen-app');
-  renderChallenges();
-  showPage('challenges');
-}
-
-function logout() {
-  state.user = null;
-  setScreen('screen-landing');
-}
-
-function updateNavPoints() {
-  document.getElementById('nav-points').textContent = `⭐ ${state.points} pts`;
-}
-
-function showPage(page) {
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.app-content').forEach(p => p.classList.remove('visible'));
-  document.getElementById('page-' + page).classList.add('visible');
-  event && event.target && event.target.classList && event.target.classList.add('active');
-  if (page === 'awards') renderAwards();
-}
-
-// ── CHALLENGES ──
-function renderChallenges() {
-  let list = document.getElementById('challenges-list');
-  list.innerHTML = CHALLENGES.map(ch => `
-    <div class="challenge-card ${state.solved.has(ch.id) ? 'solved' : ''}" onclick="openChallenge(${ch.id})">
-      <div class="ch-header">
-        <span class="ch-num">CHALLENGE ${ch.id}</span>
-        <span class="ch-badge badge-${ch.difficulty}">${ch.difficulty.toUpperCase()}</span>
-      </div>
+/* ══════════════════════════════════════════
+   CHALLENGES
+══════════════════════════════════════════ */
+function renderChallenges(){
+  document.getElementById('ch-list').innerHTML=CHALLENGES.map(ch=>{
+    let sm=LANG_META[ch.src],tm=LANG_META[ch.tgt];
+    return `<div class="ch-card ${S.solved.has(ch.id)?'solved':''}" onclick="openChallenge(${ch.id})">
+      <div class="ch-row"><span class="ch-num">CHALLENGE ${ch.id}</span><span class="diff-badge diff-${ch.diff}">${ch.diff.toUpperCase()}</span></div>
       <div class="ch-title">${ch.title}</div>
       <div class="ch-desc">${ch.desc}</div>
-      <div class="ch-footer">
-        <span class="ch-pts">⭐ ${ch.points} pts · ${'★'.repeat(ch.stars)}</span>
-        ${state.solved.has(ch.id) ? '<span class="ch-solved-badge">✓ Solved</span>' : ''}
+      <div class="ch-foot">
+        <span class="ch-pts">⭐${ch.pts}pts · ${'★'.repeat(ch.stars)}</span>
+        <span><span class="ch-lang-tag ${sm.badge}">${sm.label}</span> → <span class="ch-lang-tag ${tm.badge}">${tm.label}</span></span>
+        ${S.solved.has(ch.id)?'<span class="solved-mark">✓ Solved</span>':''}
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
-function openChallenge(id) {
-  let ch = CHALLENGES.find(c => c.id === id);
-  if (!ch) return;
-  state.currentChallenge = ch;
-
-  document.getElementById('code-editor').value = ch.starter;
-  updateLines();
-  document.getElementById('output-panel').textContent = 'Press "Transpile & Run" to see output...';
-  document.getElementById('output-panel').className = 'output-area';
-
-  document.getElementById('prob-info').innerHTML = `
+function openChallenge(id){
+  let ch=CHALLENGES.find(c=>c.id===id);
+  if(!ch) return;
+  S.curChallenge=ch;
+  document.getElementById('ch-editor').value=ch.starter;
+  syncLines('ch-editor','ch-lnum');
+  document.getElementById('ch-out').textContent='Hit Transpile to see output...';
+  let sm=LANG_META[ch.src],tm=LANG_META[ch.tgt];
+  let sb=document.getElementById('ch-src-badge');sb.textContent=sm.label;sb.className='panel-badge '+sm.badge;
+  let tb=document.getElementById('ch-tgt-badge');tb.textContent=tm.label;tb.className='panel-badge '+tm.badge;
+  document.getElementById('prob-info').innerHTML=`
     <div class="prob-meta">
-      <span class="ch-badge badge-${ch.difficulty}">${ch.difficulty.toUpperCase()}</span>
-      <span style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">⭐ ${ch.points} pts</span>
+      <span class="diff-badge diff-${ch.diff}">${ch.diff.toUpperCase()}</span>
+      <span class="ch-lang-tag ${sm.badge}">${sm.label}</span>→<span class="ch-lang-tag ${tm.badge}">${tm.label}</span>
+      <span style="font-family:var(--font-mono);font-size:11px;color:var(--accent)">⭐${ch.pts}pts</span>
     </div>
     <div class="prob-title">${ch.title}</div>
     <p class="prob-desc">${ch.desc}</p>
-    <div class="prob-example-label" style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:.4rem">Example</div>
-    <div class="prob-example">${ch.example}</div>
-    ${state.solved.has(ch.id) ? '<div style="margin-top:.8rem;color:var(--accent);font-size:13px">✓ Already solved!</div>' : ''}
-  `;
-
-  showPage('editor');
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    <div class="prob-ex-label">Example</div>
+    <div class="prob-ex">${esc(ch.example)}</div>
+    ${S.solved.has(ch.id)?'<div style="margin-top:.7rem;font-size:12px;color:var(--accent)">✓ Already solved!</div>':''}
+    <div style="margin-top:.8rem;font-size:11px;color:var(--muted)">💬 Stuck? Ask the AI chatbot →</div>`;
+  document.querySelectorAll('.app-content').forEach(p=>p.classList.remove('visible'));
+  document.getElementById('page-editor').classList.add('visible');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
 }
 
-function runCode() {
-  let cCode = document.getElementById('code-editor').value;
-  let panel = document.getElementById('output-panel');
-
-  panel.textContent = '⟳ Transpiling...';
-  panel.className = 'output-area';
-
-  setTimeout(() => {
+function runChallenge(){
+  let ch=S.curChallenge;if(!ch) return;
+  let code=document.getElementById('ch-editor').value;
+  let panel=document.getElementById('ch-out');
+  panel.textContent='⟳ Transpiling & running...';
+  setTimeout(()=>{
     try {
-      let pyCode = transpile(cCode);
-      let result = evalPython(pyCode);
-      panel.innerHTML = `<div style="color:var(--muted);font-size:11px;margin-bottom:.6rem;letter-spacing:1px">TRANSPILED PYTHON:</div>${escHtml(pyCode)}\n\n<div style="color:var(--muted);font-size:11px;margin:.8rem 0 .4rem;letter-spacing:1px">OUTPUT:</div><span style="color:var(--accent)">${escHtml(result)}</span>`;
-      panel.className = 'output-area';
-
-      // Check if challenge passes
-      if (state.currentChallenge && state.currentChallenge.test(cCode)) {
-        let ch = state.currentChallenge;
-        if (!state.solved.has(ch.id)) {
-          state.solved.add(ch.id);
-          state.points += ch.points;
-          state.stars += ch.stars;
-          updateNavPoints();
-          renderChallenges();
-          setTimeout(() => showSuccessModal(ch), 600);
-        } else {
-          showToast('Already solved! Keep experimenting ✓', true);
-        }
+      let ir=ch.src==='c'?parseC(code):parsePython(code);
+      let result=irToCode(ir,ch.tgt);
+      let execOut='';
+      try{ execOut=execIR(ir); }catch(e){ execOut='(could not simulate execution)'; }
+      let tm=LANG_META[ch.tgt];
+      panel.innerHTML=
+        `<span class="out-label">TRANSPILED ${tm.label.toUpperCase()}</span>`+
+        `<div style="color:var(--text)">${esc(result)}</div>`+
+        `<hr class="out-divider">`+
+        `<span class="out-label">▶ EXECUTION OUTPUT</span>`+
+        `<div class="out-exec">${esc(execOut)}</div>`;
+      if(ch.test(code)){
+        if(!S.solved.has(ch.id)){
+          S.solved.add(ch.id);S.points+=ch.pts;S.stars+=ch.stars;
+          updateNav();renderChallenges();
+          setTimeout(()=>showModal(ch),500);
+        } else {showToast('Already solved! Great code ✓',true);}
       }
-    } catch(e) {
-      panel.textContent = 'Error: ' + e.message;
-      panel.className = 'output-area error';
-    }
-  }, 300);
+    }catch(e){panel.innerHTML=`<span class="out-error">Error: ${esc(e.message)}</span><br><span style="color:var(--muted);font-size:12px">💬 Ask the chatbot to explain this error!</span>`;}
+  },260);
 }
 
-function runPlayground() {
-  let cCode = document.getElementById('pg-editor').value;
-  let panel = document.getElementById('pg-output');
-  panel.textContent = '⟳ Transpiling...';
-  setTimeout(() => {
-    try {
-      let py = transpile(cCode);
-      let res = evalPython(py);
-      panel.innerHTML = `<div style="color:var(--muted);font-size:11px;margin-bottom:.5rem;letter-spacing:1px">PYTHON:</div>${escHtml(py)}\n\n<div style="color:var(--muted);font-size:11px;margin:.8rem 0 .4rem;letter-spacing:1px">OUTPUT:</div><span style="color:var(--accent)">${escHtml(res)}</span>`;
-    } catch(e) {
-      panel.textContent = 'Error: ' + e.message;
-      panel.className = 'output-area error';
-    }
-  }, 300);
+/* ══════════════════════════════════════════
+   AWARDS
+══════════════════════════════════════════ */
+function renderAwards(){
+  document.getElementById('aw-pts').textContent=S.points;
+  document.getElementById('aw-stars').innerHTML=Array(S.stars).fill('⭐').join('');
+  document.getElementById('badges-wrap').innerHTML=BADGES.map(b=>{
+    let earned=b.check(S);
+    return `<div class="badge-tile ${earned?'earned':'locked'}">
+      <div class="badge-icon">${b.icon}</div>
+      <div class="badge-name">${b.name}</div>
+      <div class="badge-req">${b.req}</div>
+      ${earned?'<div class="badge-check">✓ Earned</div>':''}
+    </div>`;
+  }).join('');
+  let lb=LEADERBOARD_BASE.map(p=>({...p}));
+  lb.find(p=>p.isMe).pts=S.points;
+  lb.sort((a,b)=>b.pts-a.pts);
+  document.getElementById('lb-list').innerHTML=lb.map((p,i)=>{
+    let rc=i===0?'g':i===1?'s':i===2?'b':'';
+    let ri=i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1;
+    return `<div class="lb-row ${p.isMe?'me':''}">
+      <div class="lb-rank ${rc}">${ri}</div>
+      <div class="lb-av" style="background:${p.col}22;color:${p.col}">${p.name[0]}</div>
+      <div class="lb-name">${p.name}${p.isMe?' (You)':''}</div>
+      <div class="lb-pts">${p.pts}</div>
+    </div>`;
+  }).join('');
 }
 
-function escHtml(t) {
-  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+/* ══════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════ */
+function showModal(ch){
+  document.getElementById('m-icon').textContent='🎉';
+  document.getElementById('m-title').textContent='Challenge Solved!';
+  document.getElementById('m-sub').textContent=ch.title;
+  document.getElementById('m-pts').textContent=`+${ch.pts} pts`;
+  document.getElementById('m-stars').innerHTML=Array(ch.stars).fill('⭐').join(' ');
+  document.getElementById('modal').classList.add('show');
 }
-
-// ── MODAL ──
-function showSuccessModal(ch) {
-  document.getElementById('modal-icon').textContent = '🎉';
-  document.getElementById('modal-title').textContent = 'Challenge Solved!';
-  document.getElementById('modal-sub').textContent = ch.title;
-  document.getElementById('modal-pts').textContent = `+${ch.points} pts`;
-  document.getElementById('modal-stars').innerHTML = Array(ch.stars).fill('⭐').join(' ');
-  document.getElementById('result-modal').classList.add('show');
-}
-
-function closeModal() {
-  document.getElementById('result-modal').classList.remove('show');
-}
-
-function nextChallenge() {
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+function nextCh(){
   closeModal();
-  let curr = state.currentChallenge;
-  let next = CHALLENGES.find(c => c.id === (curr ? curr.id + 1 : 1));
-  if (next) openChallenge(next.id);
-  else {
-    showPage('challenges');
-    document.querySelectorAll('.nav-tab')[0].classList.add('active');
+  let nxt=CHALLENGES.find(c=>c.id===(S.curChallenge?S.curChallenge.id+1:1));
+  if(nxt) openChallenge(nxt.id);
+  else{navTo('challenges',null);document.querySelectorAll('.nav-tab')[1].classList.add('active');}
+}
+
+/* ══════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════ */
+function showToast(msg,ok=true){
+  let t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast'+(ok?' ok':'')+' show';
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+/* ══════════════════════════════════════════
+   AI CHATBOT
+══════════════════════════════════════════ */
+let chatOpen=false;
+function toggleChat(){
+  chatOpen=!chatOpen;
+  document.getElementById('chat-window').classList.toggle('open',chatOpen);
+  document.getElementById('chat-notif').classList.remove('show');
+}
+
+function addBotMsg(text){
+  let msgs=document.getElementById('chat-msgs');
+  let now=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  let div=document.createElement('div');
+  div.className='chat-msg bot';
+  div.innerHTML=`<div class="msg-av bot">🤖</div><div><div class="msg-bubble">${text}</div><div class="msg-time">${now}</div></div>`;
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+function addUserMsg(text){
+  let msgs=document.getElementById('chat-msgs');
+  let now=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  let av=(S.user||'U')[0].toUpperCase();
+  let div=document.createElement('div');
+  div.className='chat-msg user';
+  div.innerHTML=`<div class="msg-av usr">${av}</div><div><div class="msg-bubble">${esc(text)}</div><div class="msg-time">${now}</div></div>`;
+  document.getElementById('chat-msgs').appendChild(div);
+  document.getElementById('chat-msgs').scrollTop=9999;
+}
+function showTyping(){
+  let msgs=document.getElementById('chat-msgs');
+  let div=document.createElement('div');
+  div.className='chat-msg bot';div.id='typing-ind';
+  div.innerHTML=`<div class="msg-av bot">🤖</div><div class="chat-typing"><span></span><span></span><span></span></div>`;
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+function hideTyping(){let t=document.getElementById('typing-ind');if(t)t.remove();}
+
+function askSug(el){
+  document.getElementById('chat-input').value=el.textContent;
+  sendChat();
+}
+
+// ── AI Knowledge Base ──────────────────────────
+function getBotReply(q) {
+  q=q.toLowerCase().trim();
+
+  // Errors
+  if(q.includes('error')||q.includes('not working')||q.includes('bug')||q.includes('wrong')) {
+    let ch=S.curChallenge;
+    if(ch) return `Looking at Challenge ${ch.id} (${ch.title}):\n\n• Make sure every statement ends with <b>;</b> in C\n• Check that your variable name matches exactly\n• Use <b>printf(expr);</b> not <b>print</b> in C\n• In C, opening <b>{</b> must be on the same line as if/while\n\nTry hitting Transpile again after fixing!`;
+    return `Common errors in this transpiler:\n\n• Missing <b>;</b> at end of C statements\n• Writing <b>print</b> instead of <b>printf</b> in C\n• Forgetting <b>{</b> after if/while in C\n• Python needs indentation (4 spaces), not braces\n\nPaste your error here and I'll help more!`;
   }
-}
 
-// ── AWARDS ──
-function renderAwards() {
-  document.getElementById('award-pts').textContent = state.points;
-  let starsEl = document.getElementById('award-stars');
-  starsEl.innerHTML = Array(state.stars).fill('⭐').join('');
+  // Semicolons
+  if(q.includes('semicolon')||q.includes(';')) return `Great question! 🎯\n\n<b>C uses semicolons</b> to end every statement:\n<code>int a = 5;</code>\n\n<b>Python does NOT use semicolons</b> — it uses newlines:\n<code>a = 5</code>\n\nWhen our transpiler converts C→Python, it automatically strips the semicolons for you!`;
 
-  document.getElementById('badges-grid').innerHTML = BADGES.map(b => {
-    let earned = b.check(state);
-    return `
-      <div class="badge-card ${earned ? 'earned' : 'locked'}">
-        <div class="badge-icon">${b.icon}</div>
-        <div class="badge-name">${b.name}</div>
-        <div class="badge-req">${b.req}</div>
-        ${earned ? '<div style="font-size:11px;color:var(--accent);margin-top:4px">✓ Earned</div>' : ''}
-      </div>`;
-  }).join('');
+  // printf / print
+  if(q.includes('printf')||q.includes('print')) return `<b>printf</b> is C's way to print output.\n<b>print()</b> is Python's way.\n\nOur transpiler converts:\n• C: <code>printf(a + b);</code>\n→ Python: <code>print((a + b))</code>\n\nIn Java it becomes <code>System.out.println(...)</code>\nIn C++ it becomes <code>std::cout << ... << std::endl;</code>\nIn JavaScript it becomes <code>console.log(...)</code>`;
 
-  let lb = [...LEADERBOARD].map(p => ({...p}));
-  lb.find(p => p.isMe).pts = state.points;
-  lb.sort((a, b) => b.pts - a.pts);
+  // While loop
+  if(q.includes('while')) return `<b>While loops</b> repeat code while a condition is true.\n\n<b>C syntax:</b>\n<code>while (a > 0) {\n    a = a - 1;\n}</code>\n\n<b>Python syntax (no braces, uses indentation!):</b>\n<code>while a > 0:\n    a = a - 1</code>\n\nThe logic is identical — only the syntax changes!`;
 
-  document.getElementById('leaderboard').innerHTML = lb.map((p, i) => {
-    let rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-    let rankIcon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
-    return `
-      <div class="lb-row ${p.isMe ? 'me' : ''}">
-        <div class="lb-rank ${rankClass}">${rankIcon}</div>
-        <div class="lb-avatar" style="background:${p.color}22;color:${p.color}">${p.name[0]}</div>
-        <div class="lb-name">${p.name}${p.isMe ? ' (You)' : ''}</div>
-        <div class="lb-pts">${p.pts} pts</div>
-      </div>`;
-  }).join('');
-}
+  // if / else
+  if(q.includes('if')||q.includes('else')) return `<b>if-else</b> works the same logically in all languages:\n\n<b>C:</b>\n<code>if (a > 0) {\n    printf(a);\n} else {\n    printf(0);\n}</code>\n\n<b>Python:</b>\n<code>if a > 0:\n    print(a)\nelse:\n    print(0)</code>\n\nKey difference: Python uses <b>:</b> and indentation instead of <b>{ }</b>`;
 
-// ── TOAST ──
-function showToast(msg, success = true) {
-  let t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast' + (success ? ' success' : '') + ' show';
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
+  // break
+  if(q.includes('break')) return `<b>break</b> exits a loop immediately.\n\nIt works the same in C, Python, Java, C++, and JavaScript — the keyword <b>break</b> is identical in all of them!\n\n<code>while (a > 0) {\n    if (a == 5) {\n        break;  ← stops the loop here\n    }\n}</code>`;
 
-// ── LINE NUMBERS ──
-function updateLines() {
-  let ta = document.getElementById('code-editor');
-  let ln = document.getElementById('line-nums');
-  let lines = ta.value.split('\n').length;
-  ln.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('<br>');
-}
+  // variables / declaration
+  if(q.includes('variable')||q.includes('declare')||q.includes('int')||q.includes('float')) return `<b>Variable declaration differences:</b>\n\n• <b>C:</b> <code>int a = 5;</code>  (must say type)\n• <b>C++:</b> <code>int a = 5;</code>  (same as C)\n• <b>Java:</b> <code>int a = 5;</code>  (same, but float → double)\n• <b>Python:</b> <code>a = 5</code>  (no type needed!)\n• <b>JavaScript:</b> <code>let a = 5;</code>  (use let)\n\nPython and JS are <b>dynamically typed</b> — no need to declare the type!`;
 
-function updatePGLines() {
-  let ta = document.getElementById('pg-editor');
-  let ln = document.getElementById('pg-line-nums');
-  let lines = ta.value.split('\n').length;
-  ln.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('<br>');
-}
+  // why different
+  if(q.includes('why')||q.includes('reason')||q.includes('difference')||q.includes('different')) return `Each language was designed for a different purpose:\n\n• <b>C</b> — written in 1972, needs explicit types for speed and memory control\n• <b>Python</b> — designed for simplicity and readability, no types needed\n• <b>C++</b> — C with object-oriented features added\n• <b>Java</b> — runs on any OS via the JVM, strong typing\n• <b>JavaScript</b> — runs in browsers, flexible and dynamic\n\nOur transpiler shows you how the same logic looks in each!`;
 
-function handleTab(e) {
-  if (e.key === 'Tab') {
-    e.preventDefault();
-    let t = e.target;
-    let s = t.selectionStart;
-    t.value = t.value.slice(0, s) + '    ' + t.value.slice(t.selectionEnd);
-    t.selectionStart = t.selectionEnd = s + 4;
+  // C++ cout
+  if(q.includes('cout')||q.includes('c++')) return `In <b>C++</b>, output uses streams:\n<code>std::cout << value << std::endl;</code>\n\n• <code>std::cout</code> = standard output (like printf)\n• <code><<</code> = stream insertion operator\n• <code>std::endl</code> = end of line (like \\n)\n\nOur transpiler converts every <code>printf(x)</code> to <code>std::cout << x << std::endl;</code> automatically!`;
+
+  // Java
+  if(q.includes('java')) return `<b>Java</b> is more verbose than C or Python:\n\n• All code must be inside a <b>class</b>\n• The main method signature is always:\n  <code>public static void main(String[] args)</code>\n• print: <code>System.out.println(value);</code>\n• float in C → <b>double</b> in Java (Java prefers double precision)\n\nOur transpiler wraps everything in a <code>class Main</code> for you!`;
+
+  // JavaScript
+  if(q.includes('javascript')||q.includes('js')||q.includes('console')) return `<b>JavaScript</b> differences:\n\n• Variables use <code>let</code> instead of <code>int</code>\n• Print: <code>console.log(value);</code>\n• No types needed (like Python)\n• Our transpiler wraps code in an IIFE:\n  <code>(function() { ... })();</code>\n  This keeps variables scoped safely.`;
+
+  // transpiler / how it works
+  if(q.includes('transpiler')||q.includes('how does')||q.includes('how it works')) return `Our transpiler works in <b>4 stages</b>:\n\n1. <b>Lexer</b> — breaks code into tokens (words/symbols)\n2. <b>Parser</b> — builds an AST (Abstract Syntax Tree)\n3. <b>IR Generator</b> — converts AST to a neutral format\n4. <b>Code Generator</b> — converts IR to the target language\n\nThis is how real compilers like GCC work too! Your project implements all 4 stages in Python.`;
+
+  // points / awards
+  if(q.includes('point')||q.includes('star')||q.includes('badge')||q.includes('award')) return `<b>Points &amp; Rewards system:</b>\n\n• Solve Easy challenges → 50-75 pts + ⭐\n• Solve Medium challenges → 100-125 pts + ⭐⭐\n• Solve Hard challenges → 160-170 pts + ⭐⭐⭐\n\nBadges unlock automatically when you hit milestones — like solving 3 challenges (Hat Trick 🎩) or using 3 different target languages (Polyglot 🌐)!\n\nCheck the <b>Awards</b> page to see your progress.`;
+
+  // sum / average
+  if(q.includes('sum')||q.includes('average')||q.includes('add')) return `For <b>sum of numbers</b> in C:\n<code>int a = 5;\nint b = 3;\nprintf(a + b);</code>\n\nFor <b>average</b>:\n<code>int a = 10;\nint b = 4;\nprintf((a + b) / 2);</code>\n\nFor <b>sum of N numbers</b> (loop approach):\n<code>int sum = 0;\nint i = 1;\nwhile (i <= 5) {\n    sum = sum + i;\n    i = i + 1;\n}\nprintf(sum);</code>`;
+
+  // greeting
+  if(q.includes('hello')||q.includes('hi')||q.includes('hey')) return `Hey there! 👋 I'm TranspilerBot, your coding assistant.\n\nYou can ask me:\n• Why does Python not use semicolons?\n• How does while loop work?\n• What is printf?\n• Explain if-else\n• How does the transpiler work?\n• Help with any challenge!`;
+
+  // help
+  if(q.includes('help')||q.includes('hint')||q.includes('stuck')||q.includes('challenge')) {
+    let ch=S.curChallenge;
+    if(ch) return `For <b>Challenge ${ch.id}: ${ch.title}</b>\n\nHint: ${ch.example}\n\nMake sure you:\n• Have the starter code as a base\n• Use <b>printf(expression);</b> to print in C\n• Check the Example section carefully\n\nYou've got this! 💪`;
+    return `Click on any challenge card to open it, then ask me for a hint! I can see which challenge you're currently on and give you specific tips.`;
   }
+
+  // default
+  let responses=[
+    `That's a great question! This transpiler handles C, Python, C++, Java, and JavaScript. Try asking about: <b>semicolons, printf, while loops, if-else, variables, or how the transpiler works</b>!`,
+    `I'm not 100% sure about that specific question, but I can help with transpiler concepts! Ask me about <b>why languages differ, how loops work, or what any error means</b>.`,
+    `Interesting! For transpiler-related questions I'm your expert. Try asking: "Why does Python not use { }?" or "What is std::cout in C++?"`,
+  ];
+  return responses[Math.floor(Math.random()*responses.length)];
 }
 
-// ── INIT ──
-updateLines();
-updatePGLines();
+function sendChat(){
+  let input=document.getElementById('chat-input');
+  let q=input.value.trim();
+  if(!q) return;
+  input.value='';
+  if(!chatOpen) toggleChat();
+  addUserMsg(q);
+  S.chatAsked++;
+  showTyping();
+  setTimeout(()=>{
+    hideTyping();
+    let reply=getBotReply(q);
+    addBotMsg(reply);
+  },800+Math.random()*600);
+}
+
+/* ══════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════ */
+function syncLines(taId,lnId){
+  let n=document.getElementById(taId).value.split('\n').length;
+  document.getElementById(lnId).innerHTML=Array.from({length:n},(_,i)=>i+1).join('<br>');
+}
+function handleTab(e){
+  if(e.key==='Tab'){e.preventDefault();let t=e.target,s=t.selectionStart;t.value=t.value.slice(0,s)+'    '+t.value.slice(t.selectionEnd);t.selectionStart=t.selectionEnd=s+4;}
+}
+function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+syncLines('tp-src','tp-lnum');
 </script>
 </body>
 </html>
